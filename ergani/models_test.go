@@ -48,7 +48,6 @@ func TestCompanyWorkCard_MarshalJSON(t *testing.T) {
 
 	jsonString := string(bytes)
 
-	// Check for key fields and their marshaled values
 	if !strings.Contains(jsonString, `"f_afm_ergodoti":"999999999"`) {
 		t.Error("Expected to find marshaled employer tax ID")
 	}

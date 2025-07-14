@@ -24,7 +24,7 @@ func main() {
 	// 1. Initialize the Ergani client
 	// This will authenticate with the provided credentials.
 	log.Println("Authenticating with Ergani...")
-	client, err := ergani.NewClient(ctx, username, password)
+	client, err := ergani.NewClient(username, password)
 	if err != nil {
 		log.Fatalf("Failed to create Ergani client: %v", err)
 	}

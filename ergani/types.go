@@ -47,14 +47,10 @@ const (
 type ScheduleWorkType string
 
 const (
-	// WorkFromOffice indicates work performed at the employer's premises.
 	WorkFromOffice ScheduleWorkType = "WORK_FROM_OFFICE"
-	// WorkFromHome indicates remote work (teleworking).
-	WorkFromHome ScheduleWorkType = "WORK_FROM_HOME"
-	// RestDay indicates a scheduled day off.
-	RestDay ScheduleWorkType = "REST_DAY"
-	// Absent indicates a planned absence (e.g., leave).
-	Absent ScheduleWorkType = "ABSENT"
+	WorkFromHome   ScheduleWorkType = "WORK_FROM_HOME"
+	RestDay        ScheduleWorkType = "REST_DAY"
+	Absent         ScheduleWorkType = "ABSENT"
 )
 
 // Custom time/date types for correct JSON formatting as required by the Ergani API.
