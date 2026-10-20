@@ -34,26 +34,6 @@ func (c *Client) SubmitWorkCards(ctx context.Context, declarations []WorkCardDec
 	return c.submit(ctx, CodeWorkCard, payload)
 }
 
-// SubmitOvertime submits E8 overtime declarations, which report the extra
-// hours the employees of one business branch worked.
-//
-// The E8 form was replaced by the working time overtime declarations, which
-// [Client.SubmitOvertimeSchedules] submits.
-//
-// The API rejects the payload of the E8 form on both the trial and the
-// production environment, so a submission through this method is expected to
-// fail. It is kept because the form is part of the official sample archive
-// and because the API still describes it, but
-// [Client.SubmitOvertimeSchedules] is the way to declare overtime.
-func (c *Client) SubmitOvertime(ctx context.Context, declarations []OvertimeDeclaration) ([]Submission, error) {
-	payload, err := buildOvertime(declarations)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.submit(ctx, CodeOvertimeE8, payload)
-}
-
 // SubmitDailySchedules submits daily schedule declarations, which report the
 // working hours of the employees of one business branch for one day.
 func (c *Client) SubmitDailySchedules(ctx context.Context, declarations []DailyScheduleDeclaration) ([]Submission, error) {
@@ -360,93 +340,6 @@ func buildWorkCards(declarations []WorkCardDeclaration) (*wire.WorkCardDeclarati
 		}
 
 		payload.Cards.Card = append(payload.Cards.Card, card)
-	}
-
-	return payload, nil
-}
-
-// buildOvertime turns the public declarations into the payload of the API.
-func buildOvertime(declarations []OvertimeDeclaration) (*wire.OvertimeDeclarations, error) {
-	payload := &wire.OvertimeDeclarations{}
-
-	for i, declaration := range declarations {
-		field := fmt.Sprintf("declarations[%d]", i)
-
-		if err := requireBranch(field+".branchNumber", declaration.BranchNumber); err != nil {
-			return nil, err
-		}
-
-		branch := wire.CompanyOvertime{
-			BranchNumber:           declaration.BranchNumber,
-			RelatedProtocol:        declaration.RelatedProtocol,
-			RelatedDate:            wire.Date{Time: declaration.RelatedDate},
-			SEPEServiceCode:        declaration.SEPEServiceCode,
-			EmployerOrganization:   declaration.EmployerOrganization,
-			PrimaryActivityCode:    declaration.PrimaryActivityCode,
-			SecondaryActivityCode1: declaration.SecondaryActivityCode1,
-			SecondaryActivityCode2: declaration.SecondaryActivityCode2,
-			SecondaryActivityCode3: declaration.SecondaryActivityCode3,
-			SecondaryActivityCode4: declaration.SecondaryActivityCode4,
-			BranchActivityCode:     declaration.BranchActivityCode,
-			MunicipalCode:          declaration.MunicipalCode,
-			Comments:               declaration.Comments,
-			LegalRepTaxID:          declaration.LegalRepTaxID,
-		}
-
-		for j, record := range declaration.Records {
-			path := fmt.Sprintf("%s.records[%d]", field, j)
-
-			if err := requireAFM(path+".employeeTaxID", record.EmployeeTaxID); err != nil {
-				return nil, err
-			}
-			if record.Date.IsZero() {
-				return nil, &ValidationError{Field: path + ".date", Reason: "the date of the overtime is required"}
-			}
-
-			justification, ok := record.Justification.code()
-			if !ok {
-				return nil, &ValidationError{
-					Field:  path + ".justification",
-					Value:  record.Justification,
-					Reason: "the justification is not one the API accepts",
-				}
-			}
-
-			pattern, ok := record.WeekPattern.code()
-			if !ok {
-				return nil, &ValidationError{
-					Field:  path + ".weekPattern",
-					Value:  record.WeekPattern,
-					Reason: "the weekly pattern is not one the API accepts",
-				}
-			}
-
-			entry := wire.OvertimeRecord{
-				EmployeeTaxID:     record.EmployeeTaxID,
-				EmployeeSSN:       record.EmployeeSSN,
-				EmployeeLastName:  record.EmployeeLastName,
-				EmployeeFirstName: record.EmployeeFirstName,
-				Date:              wire.Date{Time: record.Date},
-				FromTime:          wire.Time{Time: record.StartTime},
-				ToTime:            wire.Time{Time: record.EndTime},
-				Cancelled:         wire.FromBool(record.Cancelled),
-				ProfessionCode:    record.ProfessionCode,
-				Justification:     justification,
-				WeekPattern:       pattern,
-				ASEEApproval:      record.ASEEApproval,
-			}
-
-			if !record.SecondStartTime.IsZero() {
-				from := wire.Time{Time: record.SecondStartTime}
-				to := wire.Time{Time: record.SecondEndTime}
-				entry.SecondFromTime = &from
-				entry.SecondToTime = &to
-			}
-
-			branch.Employees.Records = append(branch.Employees.Records, entry)
-		}
-
-		payload.Overtimes.Overtime = append(payload.Overtimes.Overtime, branch)
 	}
 
 	return payload, nil

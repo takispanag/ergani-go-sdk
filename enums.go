@@ -361,15 +361,3 @@ func (p WeekPattern) Valid() bool {
 		return false
 	}
 }
-
-// code returns the code the API uses for the weekly pattern.
-func (p WeekPattern) code() (string, bool) {
-	switch p {
-	case WeekFiveDays:
-		return "5", true
-	case WeekSixDays:
-		return "6", true
-	default:
-		return "", false
-	}
-}

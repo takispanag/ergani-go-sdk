@@ -11,7 +11,9 @@
 package wire
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -28,6 +30,25 @@ func (d Date) MarshalJSON() ([]byte, error) {
 		return json.Marshal("")
 	}
 	return json.Marshal(d.Format("02/01/2006"))
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (d *Date) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		return err
+	}
+	if text == "" {
+		d.Time = time.Time{}
+		return nil
+	}
+	parsed, err := time.Parse("02/01/2006", text)
+	if err != nil {
+		return fmt.Errorf("wire: %q is not a date of the form DD/MM/YYYY: %w", text, err)
+	}
+	d.Time = parsed
+
+	return nil
 }
 
 // ISODate is a calendar date in the YYYY-MM-DD format.
@@ -55,6 +76,25 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Format("15:04"))
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (t *Time) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		return err
+	}
+	if text == "" {
+		t.Time = time.Time{}
+		return nil
+	}
+	parsed, err := time.Parse("15:04", text)
+	if err != nil {
+		return fmt.Errorf("wire: %q is not a time of the form HH:MM: %w", text, err)
+	}
+	t.Time = parsed
+
+	return nil
+}
+
 // DateTime is a timestamp in ISO 8601, with the offset of its location.
 //
 // The work card declaration uses this format for the moment of the movement.
@@ -74,6 +114,34 @@ func (t DateTime) MarshalJSON() ([]byte, error) {
 // The schema declares it as a string, not as a number.
 type Day string
 
+// Base64 is a document that the API carries Base64 encoded.
+//
+// The decoder is lenient on purpose: one of the reference payloads of the
+// Ministry carries a document that is not valid Base64, and a client must
+// not fail on a document it only has to pass through.
+type Base64 string
+
+// MarshalJSON implements the json.Marshaler interface.
+func (b Base64) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(b))
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (b *Base64) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		return err
+	}
+	*b = Base64(text)
+
+	return nil
+}
+
+// Base64FromBytes encodes a document the way the API expects it.
+func Base64FromBytes(data []byte) Base64 {
+	return Base64(base64.StdEncoding.EncodeToString(data))
+}
+
 // Bool is a boolean that the API encodes as "0" and "1".
 type Bool string
 
@@ -89,4 +157,31 @@ func FromBool(b bool) Bool {
 		return True
 	}
 	return False
+}
+
+// FromBoolPtr returns the API encoding of an optional boolean.
+//
+// The API leaves a boolean empty when it is not answered, so the three states
+// are kept apart: a nil pointer is the empty string, a pointer to false is
+// "0" and a pointer to true is "1".
+func FromBoolPtr(b *bool) Bool {
+	if b == nil {
+		return ""
+	}
+	return FromBool(*b)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (b *Bool) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		return err
+	}
+	switch text {
+	case "", "0", "1":
+		*b = Bool(text)
+		return nil
+	default:
+		return fmt.Errorf("wire: %q is not a boolean of the API, which uses \"0\" and \"1\"", text)
+	}
 }
