@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/takispanag/ergani-go-sdk/internal/wire"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/takispanag/ergani-go-sdk/internal/wire"
 )
 
 // SubmitWorkCards submits work card declarations, which report the arrival

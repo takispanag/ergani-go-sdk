@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/takispanag/ergani-go-sdk/internal/wire"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/takispanag/ergani-go-sdk/internal/wire"
 )
 
 // The reference payloads of the employment lifecycle declarations, as the
@@ -221,8 +220,20 @@ func normaliseDates(fields map[string]any) map[string]any {
 // normaliseNumbers rewrites the numeric fields into a canonical form, because
 // the samples spell them differently: "038,0" and "40,0" are both valid.
 func normaliseNumbers(fields map[string]any) map[string]any {
-	for name, digits := range numericFields {
-		value, ok := fields[name]
+	for name, value := range fields {
+		switch typed := value.(type) {
+		case map[string]any:
+			fields[name] = normaliseNumbers(typed)
+		case []any:
+			for i, element := range typed {
+				if object, ok := element.(map[string]any); ok {
+					typed[i] = normaliseNumbers(object)
+				}
+			}
+			continue
+		}
+
+		digits, ok := numericFields[name]
 		if !ok {
 			continue
 		}

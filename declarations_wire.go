@@ -2,8 +2,66 @@
 
 package ergani
 
-import "context"
-import "github.com/takispanag/ergani-go-sdk/internal/wire"
+import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/takispanag/ergani-go-sdk/internal/wire"
+	"time"
+)
+
+// declarationFields turns a payload into the map of its fields, so that the
+// fields a declaration type does not carry can be left out.
+func declarationFields(payload any) (map[string]any, error) {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("ergani: failed to marshal the declaration: %w", err)
+	}
+
+	fields := map[string]any{}
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil, fmt.Errorf("ergani: failed to decode the declaration: %w", err)
+	}
+
+	return fields, nil
+}
+
+// dropFields removes the named fields from a payload.
+func dropFields(fields map[string]any, names []string) {
+	for _, name := range names {
+		delete(fields, name)
+	}
+}
+
+// boolPtr turns the API encoding of an optional boolean into a pointer.
+//
+// The API leaves a boolean empty when it is not answered, so the three
+// states are kept apart.
+func boolPtr(value wire.Bool) *bool {
+	if value == "" {
+		return nil
+	}
+
+	answer := value == wire.True
+
+	return &answer
+}
+
+// base64Bytes decodes a document of the API.
+//
+// A document that cannot be decoded yields no bytes rather than an error:
+// the API has published a reference payload with a document that is not
+// valid Base64, and a client must not fail on a document it only passes
+// through.
+func base64Bytes(value wire.Base64) []byte {
+	decoded, err := base64.StdEncoding.DecodeString(string(value))
+	if err != nil {
+		return nil
+	}
+
+	return decoded
+}
 
 // hirePayloadOf turns a HireDeclaration into the payload of the API.
 func hirePayloadOf(d HireDeclaration) wire.HirePayload {
@@ -95,7 +153,6 @@ func hirePayloadOf(d HireDeclaration) wire.HirePayload {
 	p.IndividualAgreementFile = wire.Base64FromBytes(d.IndividualAgreementFile)
 	p.RehabilitationRecord = d.RehabilitationRecord
 	p.PrimaryInsuranceFund = d.PrimaryInsuranceFund
-	p.IkourikiSelections = d.IkourikiSelections
 	p.SupplementaryInsuranceFund = d.SupplementaryInsuranceFund
 	p.TransferDate = wire.Date{Time: d.TransferDate}
 	p.TransferCompanyTaxID = d.TransferCompanyTaxID
@@ -201,7 +258,7 @@ func hireDeclarationOf(p wire.HirePayload) HireDeclaration {
 	d.IndividualAgreementFile = base64Bytes(p.IndividualAgreementFile)
 	d.RehabilitationRecord = p.RehabilitationRecord
 	d.PrimaryInsuranceFund = p.PrimaryInsuranceFund
-	d.IkourikiSelections = p.IkourikiSelections
+	d.EpikourikiSelections = hireHireBeneficiarySelectionOf(p.EpikourikiSelections)
 	d.SupplementaryInsuranceFund = p.SupplementaryInsuranceFund
 	d.TransferDate = p.TransferDate.Time
 	d.TransferCompanyTaxID = p.TransferCompanyTaxID
@@ -215,6 +272,46 @@ func hireDeclarationOf(p wire.HirePayload) HireDeclaration {
 	d.BorrowedStaffAgreement = p.BorrowedStaffAgreement
 	d.IndividualAgreementStatus = IndividualAgreementStatus(p.IndividualAgreementStatus)
 	return d
+}
+
+// hireHireBeneficiarySelection builds a nested object of a hire declaration.
+func hireHireBeneficiarySelection(variant HireVariant, value *HireBeneficiarySelection) wire.HireEpikourikiSelectionsPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case HireNew:
+		return wire.HireEpikourikiSelectionsPayload{
+			"EpikourikiSelectionsE3N": wire.HireEpikourikiSelections{
+				KodEpikourikis: value.KodEpikourikis,
+			},
+		}
+	case HireTransfer:
+		return wire.HireEpikourikiSelectionsPayload{
+			"EpikourikiSelectionsE3M": wire.HireEpikourikiSelections{
+				KodEpikourikis: value.KodEpikourikis,
+			},
+		}
+	case HireForLoanOut:
+		return wire.HireEpikourikiSelectionsPayload{
+			"EpikourikiSelectionsE3PD": wire.HireEpikourikiSelections{
+				KodEpikourikis: value.KodEpikourikis,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// hireHireBeneficiarySelectionOf reads a nested object of a hire declaration.
+func hireHireBeneficiarySelectionOf(payload wire.HireEpikourikiSelectionsPayload) *HireBeneficiarySelection {
+	for _, entry := range payload {
+		value := &HireBeneficiarySelection{}
+		value.KodEpikourikis = entry.KodEpikourikis
+		return value
+	}
+	return nil
 }
 
 // HireVariant is a type of the hire declaration.
@@ -335,6 +432,7 @@ func (c *Client) SubmitHire(ctx context.Context, variant HireVariant, declaratio
 // hireFieldsOf turns a hire declaration into the fields of the payload.
 func hireFieldsOf(variant HireVariant, declaration HireDeclaration) (map[string]any, error) {
 	payload := hirePayloadOf(declaration)
+	payload.EpikourikiSelections = hireHireBeneficiarySelection(variant, declaration.EpikourikiSelections)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -963,8 +1061,6 @@ func employmentChangePayloadOf(d EmploymentChangeDeclaration) wire.EmploymentCha
 	p.EssentialTermsAcceptance = string(d.EssentialTermsAcceptance)
 	p.File = wire.Base64FromBytes(d.File)
 	p.EpibolhFile = d.EpibolhFile
-	p.PesMetabolon = d.PesMetabolon
-	p.Ikourikes = d.Ikourikes
 	p.WagesPaymentMethod = d.WagesPaymentMethod
 	return p
 }
@@ -1064,10 +1160,74 @@ func employmentChangeDeclarationOf(p wire.EmploymentChangePayload) EmploymentCha
 	d.EssentialTermsAcceptance = EssentialTermsAcceptance(p.EssentialTermsAcceptance)
 	d.File = base64Bytes(p.File)
 	d.EpibolhFile = p.EpibolhFile
-	d.PesMetabolon = p.PesMetabolon
-	d.Ikourikes = p.Ikourikes
+	d.TypesMetabolon = employmentChangeChangeTypeSelectionOf(p.TypesMetabolon)
+	d.Epikourikes = employmentChangeInsuranceSelectionOf(p.Epikourikes)
 	d.WagesPaymentMethod = p.WagesPaymentMethod
 	return d
+}
+
+// employmentChangeChangeTypeSelection builds a nested object of a employmentchange declaration.
+func employmentChangeChangeTypeSelection(variant EmploymentChangeVariant, value *ChangeTypeSelection) wire.EmploymentChangeTypesMetabolonPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case ChangeEmployment:
+		return wire.EmploymentChangeTypesMetabolonPayload{
+			"TypesMetabolonMA": wire.EmploymentChangeTypesMetabolon{
+				TyposMetabolhs: value.TyposMetabolhs,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// employmentChangeChangeTypeSelectionOf reads a nested object of a employmentchange declaration.
+func employmentChangeChangeTypeSelectionOf(payload wire.EmploymentChangeTypesMetabolonPayload) *ChangeTypeSelection {
+	for _, entry := range payload {
+		value := &ChangeTypeSelection{}
+		value.TyposMetabolhs = entry.TyposMetabolhs
+		return value
+	}
+	return nil
+}
+
+// employmentChangeInsuranceSelection builds a nested object of a employmentchange declaration.
+func employmentChangeInsuranceSelection(variant EmploymentChangeVariant, value []InsuranceSelection) wire.EmploymentChangeEpikourikesPayload {
+	if len(value) == 0 {
+		return nil
+	}
+
+	switch variant {
+	case ChangeEmployment:
+		entries := make([]wire.EmploymentChangeEpikourikesEntry, 0, len(value))
+		for _, item := range value {
+			entries = append(entries, wire.EmploymentChangeEpikourikesEntry{
+				EpikourikiKod: item.EpikourikiKod,
+			})
+		}
+		return wire.EmploymentChangeEpikourikesPayload{
+			"EpikourikesMA": entries,
+		}
+	default:
+		return nil
+	}
+}
+
+// employmentChangeInsuranceSelectionOf reads a nested object of a employmentchange declaration.
+func employmentChangeInsuranceSelectionOf(payload wire.EmploymentChangeEpikourikesPayload) []InsuranceSelection {
+	for _, entries := range payload {
+		value := make([]InsuranceSelection, 0, len(entries))
+		for _, entry := range entries {
+			item := InsuranceSelection{}
+			item.EpikourikiKod = entry.EpikourikiKod
+			value = append(value, item)
+		}
+		return value
+	}
+	return nil
 }
 
 // EmploymentChangeVariant is a type of the employmentchange declaration.
@@ -1146,6 +1306,8 @@ func (c *Client) SubmitEmploymentChange(ctx context.Context, variant EmploymentC
 // employmentChangeFieldsOf turns a employmentchange declaration into the fields of the payload.
 func employmentChangeFieldsOf(variant EmploymentChangeVariant, declaration EmploymentChangeDeclaration) (map[string]any, error) {
 	payload := employmentChangePayloadOf(declaration)
+	payload.TypesMetabolon = employmentChangeChangeTypeSelection(variant, declaration.TypesMetabolon)
+	payload.Epikourikes = employmentChangeInsuranceSelection(variant, declaration.Epikourikes)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -1166,7 +1328,6 @@ func constructionWorkerPayloadOf(d ConstructionWorkerDeclaration) wire.Construct
 	p.SEPEServiceCode = d.SEPEServiceCode
 	p.MunicipalCode = d.MunicipalCode
 	p.Comments = d.Comments
-	p.Gazomenoi = d.Gazomenoi
 	p.Year = d.Year
 	p.Month = d.Month
 	return p
@@ -1182,10 +1343,84 @@ func constructionWorkerDeclarationOf(p wire.ConstructionWorkerPayload) Construct
 	d.SEPEServiceCode = p.SEPEServiceCode
 	d.MunicipalCode = p.MunicipalCode
 	d.Comments = p.Comments
-	d.Gazomenoi = p.Gazomenoi
+	d.Ergazomenoi = constructionWorkerConstructionEmployeeOf(p.Ergazomenoi)
 	d.Year = p.Year
 	d.Month = p.Month
 	return d
+}
+
+// constructionWorkerConstructionEmployee builds a nested object of a constructionworker declaration.
+func constructionWorkerConstructionEmployee(variant ConstructionWorkerVariant, value *ConstructionEmployee) wire.ConstructionWorkerErgazomenoiPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case ConstructionWorker:
+		return wire.ConstructionWorkerErgazomenoiPayload{
+			"AmoeErgazomenosDate": wire.ConstructionWorkerErgazomenoi{
+				TaxID:                value.TaxID,
+				SocialSecurityNumber: value.SocialSecurityNumber,
+				Ama:                  value.Ama,
+				LastName:             value.LastName,
+				FirstName:            value.FirstName,
+				OnomaPatera:          value.OnomaPatera,
+				Date:                 optDate(value.Date),
+				From:                 optTime(value.From),
+				To:                   optTime(value.To),
+				Cancellation:         optBoolPtr(value.Cancellation),
+				Step:                 value.Step,
+				ArAdeias:             value.ArAdeias,
+				HireDate:             wire.Date{Time: value.HireDate},
+				MonthlyWages:         wire.Amount(value.MonthlyWages),
+				Notes:                value.Notes,
+			},
+		}
+	case ConstructionWorkerCensus:
+		return wire.ConstructionWorkerErgazomenoiPayload{
+			"AmoeErgazomenosDate": wire.ConstructionWorkerErgazomenoi{
+				TaxID:                value.TaxID,
+				SocialSecurityNumber: value.SocialSecurityNumber,
+				Ama:                  value.Ama,
+				LastName:             value.LastName,
+				FirstName:            value.FirstName,
+				OnomaPatera:          value.OnomaPatera,
+				DaysWorked:           optString(value.DaysWorked),
+				Step:                 value.Step,
+				ArAdeias:             value.ArAdeias,
+				HireDate:             wire.Date{Time: value.HireDate},
+				MonthlyWages:         wire.Amount(value.MonthlyWages),
+				Notes:                value.Notes,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// constructionWorkerConstructionEmployeeOf reads a nested object of a constructionworker declaration.
+func constructionWorkerConstructionEmployeeOf(payload wire.ConstructionWorkerErgazomenoiPayload) *ConstructionEmployee {
+	for _, entry := range payload {
+		value := &ConstructionEmployee{}
+		value.TaxID = entry.TaxID
+		value.SocialSecurityNumber = entry.SocialSecurityNumber
+		value.Ama = entry.Ama
+		value.LastName = entry.LastName
+		value.FirstName = entry.FirstName
+		value.OnomaPatera = entry.OnomaPatera
+		value.Date = dateOf(entry.Date)
+		value.From = timeOf(entry.From)
+		value.To = timeOf(entry.To)
+		value.Cancellation = boolPtrOf(entry.Cancellation)
+		value.Step = entry.Step
+		value.ArAdeias = entry.ArAdeias
+		value.HireDate = entry.HireDate.Time
+		value.MonthlyWages = float64(entry.MonthlyWages)
+		value.Notes = entry.Notes
+		value.DaysWorked = stringOf(entry.DaysWorked)
+		return value
+	}
+	return nil
 }
 
 // ConstructionWorkerVariant is a type of the constructionworker declaration.
@@ -1242,6 +1477,7 @@ func (c *Client) SubmitConstructionWorkers(ctx context.Context, variant Construc
 // constructionWorkerFieldsOf turns a constructionworker declaration into the fields of the payload.
 func constructionWorkerFieldsOf(variant ConstructionWorkerVariant, declaration ConstructionWorkerDeclaration) (map[string]any, error) {
 	payload := constructionWorkerPayloadOf(declaration)
+	payload.Ergazomenoi = constructionWorkerConstructionEmployee(variant, declaration.Ergazomenoi)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -1757,8 +1993,6 @@ func parentalLeavePayloadOf(d ParentalLeaveDeclaration) wire.ParentalLeavePayloa
 	p.DateLhxhsAdeias = wire.Date{Time: d.DateLhxhsAdeias}
 	p.Comments = d.Comments
 	p.AFMProswpoy = d.AFMProswpoy
-	p.Kas = d.Kas
-	p.Tes = d.Tes
 	return p
 }
 
@@ -1794,9 +2028,87 @@ func parentalLeaveDeclarationOf(p wire.ParentalLeavePayload) ParentalLeaveDeclar
 	d.DateLhxhsAdeias = p.DateLhxhsAdeias.Time
 	d.Comments = p.Comments
 	d.AFMProswpoy = p.AFMProswpoy
-	d.Kas = p.Kas
-	d.Tes = p.Tes
+	d.Amkas = parentalLeaveParentalLeaveSocialSecurityNumberOf(p.Amkas)
+	d.Dates = parentalLeaveParentalLeaveDateOf(p.Dates)
 	return d
+}
+
+// parentalLeaveParentalLeaveSocialSecurityNumber builds a nested object of a parentalleave declaration.
+func parentalLeaveParentalLeaveSocialSecurityNumber(variant ParentalLeaveVariant, value *ParentalLeaveSocialSecurityNumber) wire.ParentalLeaveAmkasPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case ParentalLeaveGrant:
+		return wire.ParentalLeaveAmkasPayload{
+			"AmkasE14": wire.ParentalLeaveAmkas{
+				SocialSecurityNumber: value.SocialSecurityNumber,
+				XorhghshAdeias:       wire.FromBoolPtr(value.XorhghshAdeias),
+				PolydymhKyhsh:        wire.FromBoolPtr(value.PolydymhKyhsh),
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// parentalLeaveParentalLeaveSocialSecurityNumberOf reads a nested object of a parentalleave declaration.
+func parentalLeaveParentalLeaveSocialSecurityNumberOf(payload wire.ParentalLeaveAmkasPayload) *ParentalLeaveSocialSecurityNumber {
+	for _, entry := range payload {
+		value := &ParentalLeaveSocialSecurityNumber{}
+		value.SocialSecurityNumber = entry.SocialSecurityNumber
+		value.XorhghshAdeias = boolPtr(entry.XorhghshAdeias)
+		value.PolydymhKyhsh = boolPtr(entry.PolydymhKyhsh)
+		return value
+	}
+	return nil
+}
+
+// parentalLeaveParentalLeaveDate builds a nested object of a parentalleave declaration.
+func parentalLeaveParentalLeaveDate(variant ParentalLeaveVariant, value []ParentalLeaveDate) wire.ParentalLeaveDatesPayload {
+	if len(value) == 0 {
+		return nil
+	}
+
+	switch variant {
+	case ParentalLeaveGrant:
+		entries := make([]wire.ParentalLeaveDatesEntry, 0, len(value))
+		for _, item := range value {
+			entries = append(entries, wire.ParentalLeaveDatesEntry{
+				DateLeave:    wire.Date{Time: item.DateLeave},
+				HourFrom:     optTime(item.HourFrom),
+				HourTo:       optTime(item.HourTo),
+				OrarioFrom:   optTime(item.OrarioFrom),
+				OrarioTo:     optTime(item.OrarioTo),
+				PliresOrario: optString(item.PliresOrario),
+			})
+		}
+		return wire.ParentalLeaveDatesPayload{
+			"DatesE14": entries,
+		}
+	default:
+		return nil
+	}
+}
+
+// parentalLeaveParentalLeaveDateOf reads a nested object of a parentalleave declaration.
+func parentalLeaveParentalLeaveDateOf(payload wire.ParentalLeaveDatesPayload) []ParentalLeaveDate {
+	for _, entries := range payload {
+		value := make([]ParentalLeaveDate, 0, len(entries))
+		for _, entry := range entries {
+			item := ParentalLeaveDate{}
+			item.DateLeave = entry.DateLeave.Time
+			item.HourFrom = timeOf(entry.HourFrom)
+			item.HourTo = timeOf(entry.HourTo)
+			item.OrarioFrom = timeOf(entry.OrarioFrom)
+			item.OrarioTo = timeOf(entry.OrarioTo)
+			item.PliresOrario = stringOf(entry.PliresOrario)
+			value = append(value, item)
+		}
+		return value
+	}
+	return nil
 }
 
 // ParentalLeaveVariant is a type of the parentalleave declaration.
@@ -1844,6 +2156,8 @@ func (c *Client) SubmitParentalLeaves(ctx context.Context, variant ParentalLeave
 // parentalLeaveFieldsOf turns a parentalleave declaration into the fields of the payload.
 func parentalLeaveFieldsOf(variant ParentalLeaveVariant, declaration ParentalLeaveDeclaration) (map[string]any, error) {
 	payload := parentalLeavePayloadOf(declaration)
+	payload.Amkas = parentalLeaveParentalLeaveSocialSecurityNumber(variant, declaration.Amkas)
+	payload.Dates = parentalLeaveParentalLeaveDate(variant, declaration.Dates)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -1862,7 +2176,6 @@ func motorcyclePayloadOf(d MotorcycleDeclaration) wire.MotorcyclePayload {
 	p.OAEEDServiceCode = d.OAEEDServiceCode
 	p.Comments = d.Comments
 	p.AFMProswpoy = d.AFMProswpoy
-	p.Xanes = d.Xanes
 	return p
 }
 
@@ -1874,8 +2187,54 @@ func motorcycleDeclarationOf(p wire.MotorcyclePayload) MotorcycleDeclaration {
 	d.OAEEDServiceCode = p.OAEEDServiceCode
 	d.Comments = p.Comments
 	d.AFMProswpoy = p.AFMProswpoy
-	d.Xanes = p.Xanes
+	d.Mixanes = motorcycleMotorcycleOf(p.Mixanes)
 	return d
+}
+
+// motorcycleMotorcycle builds a nested object of a motorcycle declaration.
+func motorcycleMotorcycle(variant MotorcycleVariant, value *Motorcycle) wire.MotorcycleMixanesPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case MotorcycleUse:
+		return wire.MotorcycleMixanesPayload{
+			"MixanesE4": wire.MotorcycleMixanes{
+				LicencePlate:       value.LicencePlate,
+				IsOwner:            wire.FromBoolPtr(value.IsOwner),
+				AFMErgazomenou:     value.AFMErgazomenou,
+				EponimoErgazomenou: value.EponimoErgazomenou,
+				OnomaErgazomenou:   value.OnomaErgazomenou,
+				OnomaPatera:        value.OnomaPatera,
+				DateEnarxisXrisis:  wire.Date{Time: value.DateEnarxisXrisis},
+				HourEnarxisXrisis:  wire.Time{Time: value.HourEnarxisXrisis},
+				DateLixisXrisis:    wire.Date{Time: value.DateLixisXrisis},
+				Paratiriseis:       value.Paratiriseis,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// motorcycleMotorcycleOf reads a nested object of a motorcycle declaration.
+func motorcycleMotorcycleOf(payload wire.MotorcycleMixanesPayload) *Motorcycle {
+	for _, entry := range payload {
+		value := &Motorcycle{}
+		value.LicencePlate = entry.LicencePlate
+		value.IsOwner = boolPtr(entry.IsOwner)
+		value.AFMErgazomenou = entry.AFMErgazomenou
+		value.EponimoErgazomenou = entry.EponimoErgazomenou
+		value.OnomaErgazomenou = entry.OnomaErgazomenou
+		value.OnomaPatera = entry.OnomaPatera
+		value.DateEnarxisXrisis = entry.DateEnarxisXrisis.Time
+		value.HourEnarxisXrisis = entry.HourEnarxisXrisis.Time
+		value.DateLixisXrisis = entry.DateLixisXrisis.Time
+		value.Paratiriseis = entry.Paratiriseis
+		return value
+	}
+	return nil
 }
 
 // MotorcycleVariant is a type of the motorcycle declaration.
@@ -1923,6 +2282,7 @@ func (c *Client) SubmitMotorcycleUse(ctx context.Context, variant MotorcycleVari
 // motorcycleFieldsOf turns a motorcycle declaration into the fields of the payload.
 func motorcycleFieldsOf(variant MotorcycleVariant, declaration MotorcycleDeclaration) (map[string]any, error) {
 	payload := motorcyclePayloadOf(declaration)
+	payload.Mixanes = motorcycleMotorcycle(variant, declaration.Mixanes)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -1948,7 +2308,7 @@ func urgentHiringPayloadOf(d UrgentHiringDeclaration) wire.UrgentHiringPayload {
 	p.LeaveTime = wire.Time{Time: d.LeaveTime}
 	p.SecondWorkingDate = wire.Date{Time: d.SecondWorkingDate}
 	p.SecondWorkingDatetime = wire.Time{Time: d.SecondWorkingDatetime}
-	p.CondWorkingDatetimeApoxwrisis = d.CondWorkingDatetimeApoxwrisis
+	p.SecondWorkingDatetimeApoxwrisis = d.SecondWorkingDatetimeApoxwrisis
 	p.ProfessionCode = d.ProfessionCode
 	p.ProfessionDescription = d.ProfessionDescription
 	p.InsuranceFund = d.InsuranceFund
@@ -1960,7 +2320,6 @@ func urgentHiringPayloadOf(d UrgentHiringDeclaration) wire.UrgentHiringPayload {
 	p.HasCollectiveAgreement = wire.FromBoolPtr(d.HasCollectiveAgreement)
 	p.CollectiveAgreementNotes = d.CollectiveAgreementNotes
 	p.PrimaryInsuranceFund = d.PrimaryInsuranceFund
-	p.IkourikiSelections = d.IkourikiSelections
 	p.WeeklyPattern = string(d.WeeklyPattern)
 	p.BreakMinutes = wire.Minutes(d.BreakMinutes)
 	p.BreakWithinSchedule = wire.FromBoolPtr(d.BreakWithinSchedule)
@@ -1984,7 +2343,7 @@ func urgentHiringDeclarationOf(p wire.UrgentHiringPayload) UrgentHiringDeclarati
 	d.LeaveTime = p.LeaveTime.Time
 	d.SecondWorkingDate = p.SecondWorkingDate.Time
 	d.SecondWorkingDatetime = p.SecondWorkingDatetime.Time
-	d.CondWorkingDatetimeApoxwrisis = p.CondWorkingDatetimeApoxwrisis
+	d.SecondWorkingDatetimeApoxwrisis = p.SecondWorkingDatetimeApoxwrisis
 	d.ProfessionCode = p.ProfessionCode
 	d.ProfessionDescription = p.ProfessionDescription
 	d.InsuranceFund = p.InsuranceFund
@@ -1996,13 +2355,41 @@ func urgentHiringDeclarationOf(p wire.UrgentHiringPayload) UrgentHiringDeclarati
 	d.HasCollectiveAgreement = boolPtr(p.HasCollectiveAgreement)
 	d.CollectiveAgreementNotes = p.CollectiveAgreementNotes
 	d.PrimaryInsuranceFund = p.PrimaryInsuranceFund
-	d.IkourikiSelections = p.IkourikiSelections
+	d.EpikourikiSelections = urgentHiringUrgentHiringBeneficiarySelectionOf(p.EpikourikiSelections)
 	d.WeeklyPattern = WeekPattern(p.WeeklyPattern)
 	d.BreakMinutes = int(p.BreakMinutes)
 	d.BreakWithinSchedule = boolPtr(p.BreakWithinSchedule)
 	d.FlexibleArrivalMinutes = int(p.FlexibleArrivalMinutes)
 	d.Comments = p.Comments
 	return d
+}
+
+// urgentHiringUrgentHiringBeneficiarySelection builds a nested object of a urgenthiring declaration.
+func urgentHiringUrgentHiringBeneficiarySelection(variant UrgentHiringVariant, value *UrgentHiringBeneficiarySelection) wire.UrgentHiringEpikourikiSelectionsPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case UrgentHiring:
+		return wire.UrgentHiringEpikourikiSelectionsPayload{
+			"EpikourikiSelectionsFastAna": wire.UrgentHiringEpikourikiSelections{
+				KodEpikourikis: value.KodEpikourikis,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// urgentHiringUrgentHiringBeneficiarySelectionOf reads a nested object of a urgenthiring declaration.
+func urgentHiringUrgentHiringBeneficiarySelectionOf(payload wire.UrgentHiringEpikourikiSelectionsPayload) *UrgentHiringBeneficiarySelection {
+	for _, entry := range payload {
+		value := &UrgentHiringBeneficiarySelection{}
+		value.KodEpikourikis = entry.KodEpikourikis
+		return value
+	}
+	return nil
 }
 
 // UrgentHiringVariant is a type of the urgenthiring declaration.
@@ -2050,6 +2437,7 @@ func (c *Client) SubmitUrgentHirings(ctx context.Context, variant UrgentHiringVa
 // urgentHiringFieldsOf turns a urgenthiring declaration into the fields of the payload.
 func urgentHiringFieldsOf(variant UrgentHiringVariant, declaration UrgentHiringDeclaration) (map[string]any, error) {
 	payload := urgentHiringPayloadOf(declaration)
+	payload.EpikourikiSelections = urgentHiringUrgentHiringBeneficiarySelection(variant, declaration.EpikourikiSelections)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -2078,7 +2466,6 @@ func annualLeavePayloadOf(d AnnualLeaveDeclaration) wire.AnnualLeavePayload {
 	p.MunicipalCode = d.MunicipalCode
 	p.Comments = d.Comments
 	p.AFMProswpoy = d.AFMProswpoy
-	p.Gazomenoi = d.Gazomenoi
 	return p
 }
 
@@ -2100,8 +2487,58 @@ func annualLeaveDeclarationOf(p wire.AnnualLeavePayload) AnnualLeaveDeclaration 
 	d.MunicipalCode = p.MunicipalCode
 	d.Comments = p.Comments
 	d.AFMProswpoy = p.AFMProswpoy
-	d.Gazomenoi = p.Gazomenoi
+	d.Ergazomenoi = annualLeaveAnnualLeaveEmployeeOf(p.Ergazomenoi)
 	return d
+}
+
+// annualLeaveAnnualLeaveEmployee builds a nested object of a annualleave declaration.
+func annualLeaveAnnualLeaveEmployee(variant AnnualLeaveVariant, value *AnnualLeaveEmployee) wire.AnnualLeaveErgazomenoiPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case AnnualLeaveNotification:
+		return wire.AnnualLeaveErgazomenoiPayload{
+			"ErgazomenoiEA": wire.AnnualLeaveErgazomenoi{
+				Aa:                           value.Aa,
+				TaxID:                        value.TaxID,
+				SocialSecurityNumber:         value.SocialSecurityNumber,
+				SocialSecurityRegistryNumber: value.SocialSecurityRegistryNumber,
+				LastName:                     value.LastName,
+				FirstName:                    value.FirstName,
+				HireDate:                     wire.Date{Time: value.HireDate},
+				DaysRight:                    wire.Count(value.DaysRight),
+				DaysReceived:                 wire.Count(value.DaysReceived),
+				MonthlyWages:                 wire.Amount(value.MonthlyWages),
+				ApodoxesSup:                  wire.Amount(value.ApodoxesSup),
+				Comments:                     value.Comments,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// annualLeaveAnnualLeaveEmployeeOf reads a nested object of a annualleave declaration.
+func annualLeaveAnnualLeaveEmployeeOf(payload wire.AnnualLeaveErgazomenoiPayload) *AnnualLeaveEmployee {
+	for _, entry := range payload {
+		value := &AnnualLeaveEmployee{}
+		value.Aa = entry.Aa
+		value.TaxID = entry.TaxID
+		value.SocialSecurityNumber = entry.SocialSecurityNumber
+		value.SocialSecurityRegistryNumber = entry.SocialSecurityRegistryNumber
+		value.LastName = entry.LastName
+		value.FirstName = entry.FirstName
+		value.HireDate = entry.HireDate.Time
+		value.DaysRight = int(entry.DaysRight)
+		value.DaysReceived = int(entry.DaysReceived)
+		value.MonthlyWages = float64(entry.MonthlyWages)
+		value.ApodoxesSup = float64(entry.ApodoxesSup)
+		value.Comments = entry.Comments
+		return value
+	}
+	return nil
 }
 
 // AnnualLeaveVariant is a type of the annualleave declaration.
@@ -2149,6 +2586,7 @@ func (c *Client) SubmitAnnualLeaves(ctx context.Context, variant AnnualLeaveVari
 // annualLeaveFieldsOf turns a annualleave declaration into the fields of the payload.
 func annualLeaveFieldsOf(variant AnnualLeaveVariant, declaration AnnualLeaveDeclaration) (map[string]any, error) {
 	payload := annualLeavePayloadOf(declaration)
+	payload.Ergazomenoi = annualLeaveAnnualLeaveEmployee(variant, declaration.Ergazomenoi)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -2173,7 +2611,6 @@ func iGEEReportPayloadOf(d IGEEReportDeclaration) wire.IGEEReportPayload {
 	p.OAEEDServiceCode = d.OAEEDServiceCode
 	p.NoMediation = string(d.NoMediation)
 	p.Comments = d.Comments
-	p.Tails = d.Tails
 	return p
 }
 
@@ -2191,8 +2628,60 @@ func iGEEReportDeclarationOf(p wire.IGEEReportPayload) IGEEReportDeclaration {
 	d.OAEEDServiceCode = p.OAEEDServiceCode
 	d.NoMediation = string(p.NoMediation)
 	d.Comments = p.Comments
-	d.Tails = p.Tails
+	d.Details = iGEEReportIGEEReportDetailOf(p.Details)
 	return d
+}
+
+// iGEEReportIGEEReportDetail builds a nested object of a igeereport declaration.
+func iGEEReportIGEEReportDetail(variant IGEEReportVariant, value []IGEEReportDetail) wire.IGEEReportDetailsPayload {
+	if len(value) == 0 {
+		return nil
+	}
+
+	switch variant {
+	case IGEEReport:
+		entries := make([]wire.IGEEReportDetailsEntry, 0, len(value))
+		for _, item := range value {
+			entries = append(entries, wire.IGEEReportDetailsEntry{
+				TaxID:          item.TaxID,
+				LastName:       item.LastName,
+				FirstName:      item.FirstName,
+				Sex:            string(item.Sex),
+				Age:            wire.Count(item.Age),
+				EducationLevel: item.EducationLevel,
+				ProfessionCode: item.ProfessionCode,
+				Unemployed:     string(item.Unemployed),
+				Nationality:    item.Nationality,
+			})
+		}
+		return wire.IGEEReportDetailsPayload{
+			"ApologistikhEktheshIgeeDetails": entries,
+		}
+	default:
+		return nil
+	}
+}
+
+// iGEEReportIGEEReportDetailOf reads a nested object of a igeereport declaration.
+func iGEEReportIGEEReportDetailOf(payload wire.IGEEReportDetailsPayload) []IGEEReportDetail {
+	for _, entries := range payload {
+		value := make([]IGEEReportDetail, 0, len(entries))
+		for _, entry := range entries {
+			item := IGEEReportDetail{}
+			item.TaxID = entry.TaxID
+			item.LastName = entry.LastName
+			item.FirstName = entry.FirstName
+			item.Sex = Sex(entry.Sex)
+			item.Age = int(entry.Age)
+			item.EducationLevel = entry.EducationLevel
+			item.ProfessionCode = entry.ProfessionCode
+			item.Unemployed = string(entry.Unemployed)
+			item.Nationality = entry.Nationality
+			value = append(value, item)
+		}
+		return value
+	}
+	return nil
 }
 
 // IGEEReportVariant is a type of the igeereport declaration.
@@ -2240,6 +2729,7 @@ func (c *Client) SubmitIGEEReports(ctx context.Context, variant IGEEReportVarian
 // iGEEReportFieldsOf turns a igeereport declaration into the fields of the payload.
 func iGEEReportFieldsOf(variant IGEEReportVariant, declaration IGEEReportDeclaration) (map[string]any, error) {
 	payload := iGEEReportPayloadOf(declaration)
+	payload.Details = iGEEReportIGEEReportDetail(variant, declaration.Details)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -2264,7 +2754,6 @@ func ePAReportPayloadOf(d EPAReportDeclaration) wire.EPAReportPayload {
 	p.OAEEDServiceCode = d.OAEEDServiceCode
 	p.NoMediation = string(d.NoMediation)
 	p.Comments = d.Comments
-	p.Tails = d.Tails
 	return p
 }
 
@@ -2282,8 +2771,64 @@ func ePAReportDeclarationOf(p wire.EPAReportPayload) EPAReportDeclaration {
 	d.OAEEDServiceCode = p.OAEEDServiceCode
 	d.NoMediation = string(p.NoMediation)
 	d.Comments = p.Comments
-	d.Tails = p.Tails
+	d.Details = ePAReportEPAReportDetailOf(p.Details)
 	return d
+}
+
+// ePAReportEPAReportDetail builds a nested object of a epareport declaration.
+func ePAReportEPAReportDetail(variant EPAReportVariant, value *EPAReportDetail) wire.EPAReportDetailsPayload {
+	if value == nil {
+		return nil
+	}
+
+	switch variant {
+	case EPAReport:
+		return wire.EPAReportDetailsPayload{
+			"ApologistikhEktheshEpaDetails": wire.EPAReportDetails{
+				TaxID:                  value.TaxID,
+				LastName:               value.LastName,
+				FirstName:              value.FirstName,
+				Sex:                    string(value.Sex),
+				Age:                    wire.Count(value.Age),
+				EducationLevel:         value.EducationLevel,
+				ArSumbasewnEksamhnou:   value.ArSumbasewnEksamhnou,
+				DateEnarksis:           wire.Date{Time: value.DateEnarksis},
+				DateLiksis:             wire.Date{Time: value.DateLiksis},
+				ProfessionCode:         value.ProfessionCode,
+				UnemploymentMonths:     value.UnemploymentMonths,
+				AFMEmmesouErgodot:      value.AFMEmmesouErgodot,
+				EponymiaEmmesouErgodot: value.EponymiaEmmesouErgodot,
+				Confirmation:           string(value.Confirmation),
+				Comments:               value.Comments,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+// ePAReportEPAReportDetailOf reads a nested object of a epareport declaration.
+func ePAReportEPAReportDetailOf(payload wire.EPAReportDetailsPayload) *EPAReportDetail {
+	for _, entry := range payload {
+		value := &EPAReportDetail{}
+		value.TaxID = entry.TaxID
+		value.LastName = entry.LastName
+		value.FirstName = entry.FirstName
+		value.Sex = Sex(entry.Sex)
+		value.Age = int(entry.Age)
+		value.EducationLevel = entry.EducationLevel
+		value.ArSumbasewnEksamhnou = entry.ArSumbasewnEksamhnou
+		value.DateEnarksis = entry.DateEnarksis.Time
+		value.DateLiksis = entry.DateLiksis.Time
+		value.ProfessionCode = entry.ProfessionCode
+		value.UnemploymentMonths = entry.UnemploymentMonths
+		value.AFMEmmesouErgodot = entry.AFMEmmesouErgodot
+		value.EponymiaEmmesouErgodot = entry.EponymiaEmmesouErgodot
+		value.Confirmation = string(entry.Confirmation)
+		value.Comments = entry.Comments
+		return value
+	}
+	return nil
 }
 
 // EPAReportVariant is a type of the epareport declaration.
@@ -2331,6 +2876,7 @@ func (c *Client) SubmitEPAReports(ctx context.Context, variant EPAReportVariant,
 // ePAReportFieldsOf turns a epareport declaration into the fields of the payload.
 func ePAReportFieldsOf(variant EPAReportVariant, declaration EPAReportDeclaration) (map[string]any, error) {
 	payload := ePAReportPayloadOf(declaration)
+	payload.Details = ePAReportEPAReportDetail(variant, declaration.Details)
 
 	fields, err := declarationFields(payload)
 	if err != nil {
@@ -2644,4 +3190,74 @@ func hireNoticeFieldsOf(variant HireNoticeVariant, declaration HireNoticeDeclara
 	dropFields(fields, hireNoticeFieldsNotCarried[string(variant)])
 
 	return fields, nil
+}
+
+// optDate converts an optional value into the wire encoding.
+func optDate(value *time.Time) *wire.Date {
+	if value == nil {
+		return nil
+	}
+	return &wire.Date{Time: *value}
+}
+
+// dateOf reads an optional value of the wire encoding.
+func dateOf(value *wire.Date) *time.Time {
+	if value == nil {
+		return nil
+	}
+	date := value.Time
+	return &date
+}
+
+// optString converts an optional value into the wire encoding.
+func optString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	text := *value
+	return &text
+}
+
+// stringOf reads an optional value of the wire encoding.
+func stringOf(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	text := *value
+	return &text
+}
+
+// optBoolPtr converts an optional boolean into the wire encoding.
+func optBoolPtr(value *bool) *wire.Bool {
+	if value == nil {
+		return nil
+	}
+	answer := wire.FromBool(*value)
+	return &answer
+}
+
+// boolPtrOf reads an optional boolean of the wire encoding.
+func boolPtrOf(value *wire.Bool) *bool {
+	if value == nil {
+		return nil
+	}
+	answer := *value == wire.True
+	return &answer
+}
+
+// optTime converts an optional value into the wire encoding.
+func optTime(value *time.Time) *wire.Time {
+	if value == nil {
+		return nil
+	}
+	return &wire.Time{Time: *value}
+}
+
+// timeOf reads an optional value of the wire encoding.
+func timeOf(value *wire.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	at := value.Time
+	return &at
 }

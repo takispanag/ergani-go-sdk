@@ -77,6 +77,70 @@ func (h *Hours) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Tally is a number of three digits, such as "050".
+type Tally int
+
+// MarshalJSON implements the json.Marshaler interface.
+func (t Tally) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("%03d", int(t)))
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (t *Tally) UnmarshalJSON(data []byte) error {
+	text, err := unmarshalNumber(data)
+	if err != nil {
+		return err
+	}
+	if text == "" {
+		*t = 0
+		return nil
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil {
+		return fmt.Errorf("wire: %q is not a number: %w", text, err)
+	}
+	*t = Tally(value)
+
+	return nil
+}
+
+// Plain is a number the API writes without padding, such as "15".
+type Plain int
+
+// MarshalJSON implements the json.Marshaler interface.
+func (p Plain) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.Itoa(int(p)))
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (p *Plain) UnmarshalJSON(data []byte) error {
+	text, err := unmarshalNumber(data)
+	if err != nil {
+		return err
+	}
+	if text == "" {
+		*p = 0
+		return nil
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil {
+		return fmt.Errorf("wire: %q is not a number: %w", text, err)
+	}
+	*p = Plain(value)
+
+	return nil
+}
+
+// unmarshalNumber reads a number the API writes as a string.
+func unmarshalNumber(data []byte) (string, error) {
+	var text string
+	if err := json.Unmarshal(data, &text); err != nil {
+		return "", fmt.Errorf("wire: the value is not a number: %w", err)
+	}
+
+	return text, nil
+}
+
 // Count is a small number, encoded with two digits, such as "02".
 type Count int
 

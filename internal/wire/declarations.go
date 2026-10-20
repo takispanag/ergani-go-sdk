@@ -2,110 +2,108 @@
 
 package wire
 
-import "encoding/json"
-
 // HirePayload is the flat set of the fields of a hire declaration.
 type HirePayload struct {
-	BranchNumber                            string          `json:"f_aa_pararthmatos"`
-	RelatedProtocol                         string          `json:"f_rel_protocol"`
-	RelatedDate                             Date            `json:"f_rel_date"`
-	SEPEServiceCode                         string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode                        string          `json:"f_ypiresia_oaed"`
-	BranchActivityCode                      string          `json:"f_kad_pararthmatos"`
-	MunicipalCode                           string          `json:"f_kallikratis_pararthmatos"`
-	LastName                                string          `json:"f_eponymo"`
-	FirstName                               string          `json:"f_onoma"`
-	FatherName                              string          `json:"f_onoma_patros"`
-	MotherName                              string          `json:"f_onoma_mitros"`
-	BirthDate                               Date            `json:"f_birthdate"`
-	Sex                                     string          `json:"f_sex"`
-	NationalityCode                         string          `json:"f_yphkoothta"`
-	IdentityDocumentType                    string          `json:"f_typos_taytothtas"`
-	IdentityDocumentNumber                  string          `json:"f_ar_taytothtas"`
-	IdentityDocumentIssuer                  string          `json:"f_ekdousa_arxh"`
-	IdentityDocumentIssued                  Date            `json:"f_date_ekdosis"`
-	IdentityDocumentExpires                 Date            `json:"f_date_ekdosis_lixi"`
-	HasResidencePermit                      Bool            `json:"f_res_permit_inst"`
-	ResidencePermitType                     string          `json:"f_res_permit_inst_type"`
-	ResidencePermitNumber                   string          `json:"f_res_permit_inst_ar"`
-	ResidencePermitExpires                  Date            `json:"f_res_permit_inst_lixi"`
-	HasWorkPermit                           Bool            `json:"f_res_permit_ap"`
-	WorkPermitType                          string          `json:"f_res_permit_ap_type"`
-	WorkPermitNumber                        string          `json:"f_res_permit_ap_ar"`
-	WorkPermitExpires                       Date            `json:"f_res_permit_ap_lixi"`
-	HasVisa                                 Bool            `json:"f_res_permit_visa"`
-	VisaNumber                              string          `json:"f_res_permit_visa_ar"`
-	VisaFrom                                Date            `json:"f_res_permit_visa_from"`
-	VisaTo                                  Date            `json:"f_res_permit_visa_to"`
-	MaritalStatus                           string          `json:"f_marital_status"`
-	Children                                Count           `json:"f_arithmos_teknon"`
-	TaxID                                   string          `json:"f_afm"`
-	TaxOffice                               string          `json:"f_doy"`
-	SocialSecurityRegistryNumber            string          `json:"f_amika"`
-	SocialSecurityNumber                    string          `json:"f_amka"`
-	UnemploymentCode                        string          `json:"f_code_anergias"`
-	AnnualIncome                            string          `json:"f_ar_vivliou_anilikou"`
-	EducationLevel                          string          `json:"f_epipedo_morfosis"`
-	HireTime                                Time            `json:"f_proslipsitime"`
-	LeaveTime                               Time            `json:"f_apoxwrisitime"`
-	WeeklyHours                             Hours           `json:"f_week_hours"`
-	ProfessionCode                          string          `json:"f_eidikothta"`
-	ProfessionDescription                   string          `json:"f_eidikothta_anal"`
-	MonthlyWages                            Amount          `json:"f_apodoxes"`
-	HourlyWages                             Amount          `json:"f_hour_apodoxes"`
-	EmploymentStatus                        string          `json:"f_kathestosapasxolisis"`
-	WorkerCategory                          string          `json:"f_xaraktirismos"`
-	ResponsiblePosition                     string          `json:"f_responsible_position"`
-	UsesDigitalWorkingTime                  Bool            `json:"f_working_time_digital_organization"`
-	FullEmploymentHours                     Hours           `json:"f_full_employment_hours"`
-	WeeklyPattern                           string          `json:"f_week_days"`
-	FlexibleArrivalMinutes                  Minutes         `json:"f_euelikto_wrario_minutes"`
-	UsesWorkCard                            Bool            `json:"f_working_card"`
-	BreakMinutes                            Minutes         `json:"f_dialeimma_minutes"`
-	BreakWithinSchedule                     Bool            `json:"f_dialeimma_entos_wrariou"`
-	Comments                                string          `json:"f_comments"`
-	ForeignWorkerFile                       Base64          `json:"f_foreign_file"`
-	MinorWorkerFile                         Base64          `json:"f_young_file"`
-	WagesPaymentFrequency                   string          `json:"f_xronos_katavolis_apodoxon"`
-	HasCollectiveAgreement                  Bool            `json:"f_efarmoste_sillogiki_simbasi"`
-	CollectiveAgreementNotes                string          `json:"f_efarmoste_sillogiki_simbasi_comments"`
-	HasUnlistedProgram                      Bool            `json:"f_mh_provlepsimo_programma"`
-	NoticeDaysAndHours                      string          `json:"f_paraggelia_hmeres_hours"`
-	MinimumNoticePeriod                     string          `json:"f_paraggelia_min_notification"`
-	NoticeNotes                             string          `json:"f_paraggelia_notes"`
-	HasDeclaredPlaceOfWork                  Bool            `json:"f_topos_ergasias"`
-	PlaceOfWorkNotes                        string          `json:"f_topos_ergasias_comment"`
-	HireDate                                Date            `json:"f_proslipsidate"`
-	InsuranceFund                           string          `json:"f_proipiresia"`
-	RelationshipType                        string          `json:"f_sxeshapasxolisis"`
-	FixedTermFrom                           Date            `json:"f_orismenou_apo"`
-	FixedTermTo                             Date            `json:"f_orismenou_ews"`
-	SpecialCase                             string          `json:"f_special_case"`
-	HasPriorProgramPlacement                Bool            `json:"f_topothetisioaed"`
-	ProgramPlacement                        string          `json:"f_programaoaed"`
-	ReplacesBeneficiary                     Bool            `json:"f_replaceprograma"`
-	ReplacedBeneficiaryTaxID                string          `json:"f_replaceprograma_afm"`
-	ReplacedBeneficiarySocialSecurityNumber string          `json:"f_replaceprograma_amka"`
-	HasTrialPeriod                          Bool            `json:"f_trial_period"`
-	TrialPeriodEnds                         Date            `json:"f_trial_date_to"`
-	EssentialTermsAcceptance                string          `json:"f_basics_acceptance"`
-	File                                    Base64          `json:"f_file"`
-	IndividualAgreementFile                 Base64          `json:"f_file_symbash"`
-	RehabilitationRecord                    string          `json:"f_ipoxreotiki_katartisi"`
-	PrimaryInsuranceFund                    string          `json:"f_kyria_asfalisi"`
-	IkourikiSelections                      json.RawMessage `json:"EpikourikiSelections"`
-	SupplementaryInsuranceFund              string          `json:"f_prosthetes_asfalistikes"`
-	TransferDate                            Date            `json:"f_date_metabibashs"`
-	TransferCompanyTaxID                    string          `json:"f_transfer_company_afm"`
-	TransferCompanyName                     string          `json:"f_transfer_company_eponimia"`
-	LoanType                                string          `json:"f_borrow_type"`
-	LoanFrom                                Date            `json:"f_borrow_date_from"`
-	LoanTo                                  Date            `json:"f_borrow_date_to"`
-	BorrowingCompanyTaxID                   string          `json:"f_borrow_company_afm"`
-	BorrowingCompanyName                    string          `json:"f_borrow_company_eponimia"`
-	WagesPaymentMethod                      string          `json:"f_kataboli_apodoxon"`
-	BorrowedStaffAgreement                  string          `json:"f_ergazom_borrow_agreement"`
-	IndividualAgreementStatus               string          `json:"f_atomikh_symbash"`
+	BranchNumber                            string                          `json:"f_aa_pararthmatos"`
+	RelatedProtocol                         string                          `json:"f_rel_protocol"`
+	RelatedDate                             Date                            `json:"f_rel_date"`
+	SEPEServiceCode                         string                          `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode                        string                          `json:"f_ypiresia_oaed"`
+	BranchActivityCode                      string                          `json:"f_kad_pararthmatos"`
+	MunicipalCode                           string                          `json:"f_kallikratis_pararthmatos"`
+	LastName                                string                          `json:"f_eponymo"`
+	FirstName                               string                          `json:"f_onoma"`
+	FatherName                              string                          `json:"f_onoma_patros"`
+	MotherName                              string                          `json:"f_onoma_mitros"`
+	BirthDate                               Date                            `json:"f_birthdate"`
+	Sex                                     string                          `json:"f_sex"`
+	NationalityCode                         string                          `json:"f_yphkoothta"`
+	IdentityDocumentType                    string                          `json:"f_typos_taytothtas"`
+	IdentityDocumentNumber                  string                          `json:"f_ar_taytothtas"`
+	IdentityDocumentIssuer                  string                          `json:"f_ekdousa_arxh"`
+	IdentityDocumentIssued                  Date                            `json:"f_date_ekdosis"`
+	IdentityDocumentExpires                 Date                            `json:"f_date_ekdosis_lixi"`
+	HasResidencePermit                      Bool                            `json:"f_res_permit_inst"`
+	ResidencePermitType                     string                          `json:"f_res_permit_inst_type"`
+	ResidencePermitNumber                   string                          `json:"f_res_permit_inst_ar"`
+	ResidencePermitExpires                  Date                            `json:"f_res_permit_inst_lixi"`
+	HasWorkPermit                           Bool                            `json:"f_res_permit_ap"`
+	WorkPermitType                          string                          `json:"f_res_permit_ap_type"`
+	WorkPermitNumber                        string                          `json:"f_res_permit_ap_ar"`
+	WorkPermitExpires                       Date                            `json:"f_res_permit_ap_lixi"`
+	HasVisa                                 Bool                            `json:"f_res_permit_visa"`
+	VisaNumber                              string                          `json:"f_res_permit_visa_ar"`
+	VisaFrom                                Date                            `json:"f_res_permit_visa_from"`
+	VisaTo                                  Date                            `json:"f_res_permit_visa_to"`
+	MaritalStatus                           string                          `json:"f_marital_status"`
+	Children                                Count                           `json:"f_arithmos_teknon"`
+	TaxID                                   string                          `json:"f_afm"`
+	TaxOffice                               string                          `json:"f_doy"`
+	SocialSecurityRegistryNumber            string                          `json:"f_amika"`
+	SocialSecurityNumber                    string                          `json:"f_amka"`
+	UnemploymentCode                        string                          `json:"f_code_anergias"`
+	AnnualIncome                            string                          `json:"f_ar_vivliou_anilikou"`
+	EducationLevel                          string                          `json:"f_epipedo_morfosis"`
+	HireTime                                Time                            `json:"f_proslipsitime"`
+	LeaveTime                               Time                            `json:"f_apoxwrisitime"`
+	WeeklyHours                             Hours                           `json:"f_week_hours"`
+	ProfessionCode                          string                          `json:"f_eidikothta"`
+	ProfessionDescription                   string                          `json:"f_eidikothta_anal"`
+	MonthlyWages                            Amount                          `json:"f_apodoxes"`
+	HourlyWages                             Amount                          `json:"f_hour_apodoxes"`
+	EmploymentStatus                        string                          `json:"f_kathestosapasxolisis"`
+	WorkerCategory                          string                          `json:"f_xaraktirismos"`
+	ResponsiblePosition                     string                          `json:"f_responsible_position"`
+	UsesDigitalWorkingTime                  Bool                            `json:"f_working_time_digital_organization"`
+	FullEmploymentHours                     Hours                           `json:"f_full_employment_hours"`
+	WeeklyPattern                           string                          `json:"f_week_days"`
+	FlexibleArrivalMinutes                  Minutes                         `json:"f_euelikto_wrario_minutes"`
+	UsesWorkCard                            Bool                            `json:"f_working_card"`
+	BreakMinutes                            Minutes                         `json:"f_dialeimma_minutes"`
+	BreakWithinSchedule                     Bool                            `json:"f_dialeimma_entos_wrariou"`
+	Comments                                string                          `json:"f_comments"`
+	ForeignWorkerFile                       Base64                          `json:"f_foreign_file"`
+	MinorWorkerFile                         Base64                          `json:"f_young_file"`
+	WagesPaymentFrequency                   string                          `json:"f_xronos_katavolis_apodoxon"`
+	HasCollectiveAgreement                  Bool                            `json:"f_efarmoste_sillogiki_simbasi"`
+	CollectiveAgreementNotes                string                          `json:"f_efarmoste_sillogiki_simbasi_comments"`
+	HasUnlistedProgram                      Bool                            `json:"f_mh_provlepsimo_programma"`
+	NoticeDaysAndHours                      string                          `json:"f_paraggelia_hmeres_hours"`
+	MinimumNoticePeriod                     string                          `json:"f_paraggelia_min_notification"`
+	NoticeNotes                             string                          `json:"f_paraggelia_notes"`
+	HasDeclaredPlaceOfWork                  Bool                            `json:"f_topos_ergasias"`
+	PlaceOfWorkNotes                        string                          `json:"f_topos_ergasias_comment"`
+	HireDate                                Date                            `json:"f_proslipsidate"`
+	InsuranceFund                           string                          `json:"f_proipiresia"`
+	RelationshipType                        string                          `json:"f_sxeshapasxolisis"`
+	FixedTermFrom                           Date                            `json:"f_orismenou_apo"`
+	FixedTermTo                             Date                            `json:"f_orismenou_ews"`
+	SpecialCase                             string                          `json:"f_special_case"`
+	HasPriorProgramPlacement                Bool                            `json:"f_topothetisioaed"`
+	ProgramPlacement                        string                          `json:"f_programaoaed"`
+	ReplacesBeneficiary                     Bool                            `json:"f_replaceprograma"`
+	ReplacedBeneficiaryTaxID                string                          `json:"f_replaceprograma_afm"`
+	ReplacedBeneficiarySocialSecurityNumber string                          `json:"f_replaceprograma_amka"`
+	HasTrialPeriod                          Bool                            `json:"f_trial_period"`
+	TrialPeriodEnds                         Date                            `json:"f_trial_date_to"`
+	EssentialTermsAcceptance                string                          `json:"f_basics_acceptance"`
+	File                                    Base64                          `json:"f_file"`
+	IndividualAgreementFile                 Base64                          `json:"f_file_symbash"`
+	RehabilitationRecord                    string                          `json:"f_ipoxreotiki_katartisi"`
+	PrimaryInsuranceFund                    string                          `json:"f_kyria_asfalisi"`
+	EpikourikiSelections                    HireEpikourikiSelectionsPayload `json:"EpikourikiSelections"`
+	SupplementaryInsuranceFund              string                          `json:"f_prosthetes_asfalistikes"`
+	TransferDate                            Date                            `json:"f_date_metabibashs"`
+	TransferCompanyTaxID                    string                          `json:"f_transfer_company_afm"`
+	TransferCompanyName                     string                          `json:"f_transfer_company_eponimia"`
+	LoanType                                string                          `json:"f_borrow_type"`
+	LoanFrom                                Date                            `json:"f_borrow_date_from"`
+	LoanTo                                  Date                            `json:"f_borrow_date_to"`
+	BorrowingCompanyTaxID                   string                          `json:"f_borrow_company_afm"`
+	BorrowingCompanyName                    string                          `json:"f_borrow_company_eponimia"`
+	WagesPaymentMethod                      string                          `json:"f_kataboli_apodoxon"`
+	BorrowedStaffAgreement                  string                          `json:"f_ergazom_borrow_agreement"`
+	IndividualAgreementStatus               string                          `json:"f_atomikh_symbash"`
 }
 
 // TerminationPayload is the flat set of the fields of a termination declaration.
@@ -185,115 +183,115 @@ type TerminationPayload struct {
 
 // EmploymentChangePayload is the flat set of the fields of a employmentchange declaration.
 type EmploymentChangePayload struct {
-	BranchNumber                   string          `json:"f_aa_pararthmatos"`
-	RelatedProtocol                string          `json:"f_rel_protocol"`
-	RelatedDate                    Date            `json:"f_rel_date"`
-	SEPEServiceCode                string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode               string          `json:"f_ypiresia_oaed"`
-	BranchActivityCode             string          `json:"f_kad_pararthmatos"`
-	MunicipalCode                  string          `json:"f_kallikratis_pararthmatos"`
-	LastName                       string          `json:"f_eponymo"`
-	FirstName                      string          `json:"f_onoma"`
-	FatherName                     string          `json:"f_onoma_patros"`
-	MotherName                     string          `json:"f_onoma_mitros"`
-	BirthDate                      Date            `json:"f_birthdate"`
-	Sex                            string          `json:"f_sex"`
-	NationalityCode                string          `json:"f_yphkoothta"`
-	IdentityDocumentType           string          `json:"f_typos_taytothtas"`
-	IdentityDocumentNumber         string          `json:"f_ar_taytothtas"`
-	IdentityDocumentIssuer         string          `json:"f_ekdousa_arxh"`
-	IdentityDocumentIssued         Date            `json:"f_date_ekdosis"`
-	IdentityDocumentExpires        Date            `json:"f_date_ekdosis_lixi"`
-	HasResidencePermit             Bool            `json:"f_res_permit_inst"`
-	ResidencePermitType            string          `json:"f_res_permit_inst_type"`
-	ResidencePermitNumber          string          `json:"f_res_permit_inst_ar"`
-	ResidencePermitExpires         Date            `json:"f_res_permit_inst_lixi"`
-	HasWorkPermit                  Bool            `json:"f_res_permit_ap"`
-	WorkPermitType                 string          `json:"f_res_permit_ap_type"`
-	WorkPermitNumber               string          `json:"f_res_permit_ap_ar"`
-	WorkPermitExpires              Date            `json:"f_res_permit_ap_lixi"`
-	HasVisa                        Bool            `json:"f_res_permit_visa"`
-	VisaNumber                     string          `json:"f_res_permit_visa_ar"`
-	VisaFrom                       Date            `json:"f_res_permit_visa_from"`
-	VisaTo                         Date            `json:"f_res_permit_visa_to"`
-	MaritalStatus                  string          `json:"f_marital_status"`
-	Children                       Count           `json:"f_arithmos_teknon"`
-	TaxID                          string          `json:"f_afm"`
-	TaxOffice                      string          `json:"f_doy"`
-	SocialSecurityRegistryNumber   string          `json:"f_amika"`
-	SocialSecurityNumber           string          `json:"f_amka"`
-	UnemploymentCode               string          `json:"f_code_anergias"`
-	AnnualIncome                   string          `json:"f_ar_vivliou_anilikou"`
-	EducationLevel                 string          `json:"f_epipedo_morfosis"`
-	DateMetabolhs                  Date            `json:"f_date_metabolhs"`
-	ProfessionCode                 string          `json:"f_eidikothta"`
-	ProfessionDescription          string          `json:"f_eidikothta_anal"`
-	MonthlyWages                   Amount          `json:"f_apodoxes"`
-	HourlyWages                    Amount          `json:"f_hour_apodoxes"`
-	XronosKatabolhs                string          `json:"f_xronos_katabolhs"`
-	HasDeclaredPlaceOfWork         Bool            `json:"f_topos_ergasias"`
-	ToposErgasiasComments          string          `json:"f_topos_ergasias_comments"`
-	EmploymentStatus               string          `json:"f_kathestosapasxolisis"`
-	WorkerCategory                 string          `json:"f_xaraktirismos"`
-	ResponsiblePosition            string          `json:"f_responsible_position"`
-	HasSignedCollectiveAgreement   Bool            `json:"f_efarmostea_sillogiki_simbasi"`
-	SignedCollectiveAgreementNotes string          `json:"f_efarmostea_sillogiki_simbasi_comments"`
-	UsesDigitalWorkingTime         Bool            `json:"f_working_time_digital_organization"`
-	MhProblepsimoProgramma         string          `json:"f_mh_problepsimo_programma"`
-	NoticeDaysAndHours             string          `json:"f_paraggelia_hmeres_hours"`
-	MinimumNoticePeriod            string          `json:"f_paraggelia_min_notification"`
-	NoticeNotes                    string          `json:"f_paraggelia_notes"`
-	WeeklyHours                    Hours           `json:"f_week_hours"`
-	FullEmploymentHours            Hours           `json:"f_full_employment_hours"`
-	WeeklyPattern                  string          `json:"f_week_days"`
-	FlexibleArrivalMinutes         Minutes         `json:"f_euelikto_wrario_minutes"`
-	UsesWorkCard                   Bool            `json:"f_working_card"`
-	BreakMinutes                   Minutes         `json:"f_dialeimma_minutes"`
-	BreakWithinSchedule            Bool            `json:"f_dialeimma_entos_wrariou"`
-	LoanType                       string          `json:"f_borrow_type"`
-	LoanFrom                       Date            `json:"f_borrow_date_from"`
-	LoanTo                         Date            `json:"f_borrow_date_to"`
-	BorrowingCompanyTaxID          string          `json:"f_borrow_company_afm"`
-	BorrowingCompanyName           string          `json:"f_borrow_company_eponimia"`
-	Comments                       string          `json:"f_comments"`
-	ForeignWorkerFile              Base64          `json:"f_foreign_file"`
-	MinorWorkerFile                Base64          `json:"f_young_file"`
-	EidosDieuthethshs              string          `json:"f_eidos_dieuthethshs"`
-	EidosDieuthethshsComments      string          `json:"f_eidos_dieuthethshs_comments"`
-	PeriodosAnaforasFrom           string          `json:"f_periodos_anaforas_from"`
-	PeriodosAnaforasTo             string          `json:"f_periodos_anaforas_to"`
-	InsuranceFund                  string          `json:"f_proipiresia"`
-	RelationshipType               string          `json:"f_sxeshapasxolisis"`
-	FixedTermFrom                  Date            `json:"f_orismenou_apo"`
-	FixedTermTo                    Date            `json:"f_orismenou_ews"`
-	SpecialCase                    string          `json:"f_special_case"`
-	KyriaAsfalish                  string          `json:"f_kyria_asfalish"`
-	ProsthetesAsfalistikesParoxes  string          `json:"f_prosthetes_asfalistikes_paroxes"`
-	RehabilitationRecord           string          `json:"f_ipoxreotiki_katartisi"`
-	HasPriorProgramPlacement       Bool            `json:"f_topothetisioaed"`
-	ProgramPlacement               string          `json:"f_programaoaed"`
-	HasTrialPeriod                 Bool            `json:"f_trial_period"`
-	TrialPeriodEnds                Date            `json:"f_trial_date_to"`
-	EssentialTermsAcceptance       string          `json:"f_basics_acceptance"`
-	File                           Base64          `json:"f_file"`
-	EpibolhFile                    string          `json:"f_epibolh_file"`
-	PesMetabolon                   json.RawMessage `json:"TypesMetabolon"`
-	Ikourikes                      json.RawMessage `json:"Epikourikes"`
-	WagesPaymentMethod             string          `json:"f_kataboli_apodoxon"`
+	BranchNumber                   string                                `json:"f_aa_pararthmatos"`
+	RelatedProtocol                string                                `json:"f_rel_protocol"`
+	RelatedDate                    Date                                  `json:"f_rel_date"`
+	SEPEServiceCode                string                                `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode               string                                `json:"f_ypiresia_oaed"`
+	BranchActivityCode             string                                `json:"f_kad_pararthmatos"`
+	MunicipalCode                  string                                `json:"f_kallikratis_pararthmatos"`
+	LastName                       string                                `json:"f_eponymo"`
+	FirstName                      string                                `json:"f_onoma"`
+	FatherName                     string                                `json:"f_onoma_patros"`
+	MotherName                     string                                `json:"f_onoma_mitros"`
+	BirthDate                      Date                                  `json:"f_birthdate"`
+	Sex                            string                                `json:"f_sex"`
+	NationalityCode                string                                `json:"f_yphkoothta"`
+	IdentityDocumentType           string                                `json:"f_typos_taytothtas"`
+	IdentityDocumentNumber         string                                `json:"f_ar_taytothtas"`
+	IdentityDocumentIssuer         string                                `json:"f_ekdousa_arxh"`
+	IdentityDocumentIssued         Date                                  `json:"f_date_ekdosis"`
+	IdentityDocumentExpires        Date                                  `json:"f_date_ekdosis_lixi"`
+	HasResidencePermit             Bool                                  `json:"f_res_permit_inst"`
+	ResidencePermitType            string                                `json:"f_res_permit_inst_type"`
+	ResidencePermitNumber          string                                `json:"f_res_permit_inst_ar"`
+	ResidencePermitExpires         Date                                  `json:"f_res_permit_inst_lixi"`
+	HasWorkPermit                  Bool                                  `json:"f_res_permit_ap"`
+	WorkPermitType                 string                                `json:"f_res_permit_ap_type"`
+	WorkPermitNumber               string                                `json:"f_res_permit_ap_ar"`
+	WorkPermitExpires              Date                                  `json:"f_res_permit_ap_lixi"`
+	HasVisa                        Bool                                  `json:"f_res_permit_visa"`
+	VisaNumber                     string                                `json:"f_res_permit_visa_ar"`
+	VisaFrom                       Date                                  `json:"f_res_permit_visa_from"`
+	VisaTo                         Date                                  `json:"f_res_permit_visa_to"`
+	MaritalStatus                  string                                `json:"f_marital_status"`
+	Children                       Count                                 `json:"f_arithmos_teknon"`
+	TaxID                          string                                `json:"f_afm"`
+	TaxOffice                      string                                `json:"f_doy"`
+	SocialSecurityRegistryNumber   string                                `json:"f_amika"`
+	SocialSecurityNumber           string                                `json:"f_amka"`
+	UnemploymentCode               string                                `json:"f_code_anergias"`
+	AnnualIncome                   string                                `json:"f_ar_vivliou_anilikou"`
+	EducationLevel                 string                                `json:"f_epipedo_morfosis"`
+	DateMetabolhs                  Date                                  `json:"f_date_metabolhs"`
+	ProfessionCode                 string                                `json:"f_eidikothta"`
+	ProfessionDescription          string                                `json:"f_eidikothta_anal"`
+	MonthlyWages                   Amount                                `json:"f_apodoxes"`
+	HourlyWages                    Amount                                `json:"f_hour_apodoxes"`
+	XronosKatabolhs                string                                `json:"f_xronos_katabolhs"`
+	HasDeclaredPlaceOfWork         Bool                                  `json:"f_topos_ergasias"`
+	ToposErgasiasComments          string                                `json:"f_topos_ergasias_comments"`
+	EmploymentStatus               string                                `json:"f_kathestosapasxolisis"`
+	WorkerCategory                 string                                `json:"f_xaraktirismos"`
+	ResponsiblePosition            string                                `json:"f_responsible_position"`
+	HasSignedCollectiveAgreement   Bool                                  `json:"f_efarmostea_sillogiki_simbasi"`
+	SignedCollectiveAgreementNotes string                                `json:"f_efarmostea_sillogiki_simbasi_comments"`
+	UsesDigitalWorkingTime         Bool                                  `json:"f_working_time_digital_organization"`
+	MhProblepsimoProgramma         string                                `json:"f_mh_problepsimo_programma"`
+	NoticeDaysAndHours             string                                `json:"f_paraggelia_hmeres_hours"`
+	MinimumNoticePeriod            string                                `json:"f_paraggelia_min_notification"`
+	NoticeNotes                    string                                `json:"f_paraggelia_notes"`
+	WeeklyHours                    Hours                                 `json:"f_week_hours"`
+	FullEmploymentHours            Hours                                 `json:"f_full_employment_hours"`
+	WeeklyPattern                  string                                `json:"f_week_days"`
+	FlexibleArrivalMinutes         Minutes                               `json:"f_euelikto_wrario_minutes"`
+	UsesWorkCard                   Bool                                  `json:"f_working_card"`
+	BreakMinutes                   Minutes                               `json:"f_dialeimma_minutes"`
+	BreakWithinSchedule            Bool                                  `json:"f_dialeimma_entos_wrariou"`
+	LoanType                       string                                `json:"f_borrow_type"`
+	LoanFrom                       Date                                  `json:"f_borrow_date_from"`
+	LoanTo                         Date                                  `json:"f_borrow_date_to"`
+	BorrowingCompanyTaxID          string                                `json:"f_borrow_company_afm"`
+	BorrowingCompanyName           string                                `json:"f_borrow_company_eponimia"`
+	Comments                       string                                `json:"f_comments"`
+	ForeignWorkerFile              Base64                                `json:"f_foreign_file"`
+	MinorWorkerFile                Base64                                `json:"f_young_file"`
+	EidosDieuthethshs              string                                `json:"f_eidos_dieuthethshs"`
+	EidosDieuthethshsComments      string                                `json:"f_eidos_dieuthethshs_comments"`
+	PeriodosAnaforasFrom           string                                `json:"f_periodos_anaforas_from"`
+	PeriodosAnaforasTo             string                                `json:"f_periodos_anaforas_to"`
+	InsuranceFund                  string                                `json:"f_proipiresia"`
+	RelationshipType               string                                `json:"f_sxeshapasxolisis"`
+	FixedTermFrom                  Date                                  `json:"f_orismenou_apo"`
+	FixedTermTo                    Date                                  `json:"f_orismenou_ews"`
+	SpecialCase                    string                                `json:"f_special_case"`
+	KyriaAsfalish                  string                                `json:"f_kyria_asfalish"`
+	ProsthetesAsfalistikesParoxes  string                                `json:"f_prosthetes_asfalistikes_paroxes"`
+	RehabilitationRecord           string                                `json:"f_ipoxreotiki_katartisi"`
+	HasPriorProgramPlacement       Bool                                  `json:"f_topothetisioaed"`
+	ProgramPlacement               string                                `json:"f_programaoaed"`
+	HasTrialPeriod                 Bool                                  `json:"f_trial_period"`
+	TrialPeriodEnds                Date                                  `json:"f_trial_date_to"`
+	EssentialTermsAcceptance       string                                `json:"f_basics_acceptance"`
+	File                           Base64                                `json:"f_file"`
+	EpibolhFile                    string                                `json:"f_epibolh_file"`
+	TypesMetabolon                 EmploymentChangeTypesMetabolonPayload `json:"TypesMetabolon"`
+	Epikourikes                    EmploymentChangeEpikourikesPayload    `json:"Epikourikes"`
+	WagesPaymentMethod             string                                `json:"f_kataboli_apodoxon"`
 }
 
 // ConstructionWorkerPayload is the flat set of the fields of a constructionworker declaration.
 type ConstructionWorkerPayload struct {
-	BranchNumber    string          `json:"f_aa_pararthmatos"`
-	Amoe            string          `json:"f_amoe"`
-	RelatedProtocol string          `json:"f_rel_protocol"`
-	RelatedDate     Date            `json:"f_rel_date"`
-	SEPEServiceCode string          `json:"f_ypiresia_sepe"`
-	MunicipalCode   string          `json:"f_kallikratis_pararthmatos"`
-	Comments        string          `json:"f_comments"`
-	Gazomenoi       json.RawMessage `json:"Ergazomenoi"`
-	Year            string          `json:"f_year"`
-	Month           string          `json:"f_month"`
+	BranchNumber    string                               `json:"f_aa_pararthmatos"`
+	Amoe            string                               `json:"f_amoe"`
+	RelatedProtocol string                               `json:"f_rel_protocol"`
+	RelatedDate     Date                                 `json:"f_rel_date"`
+	SEPEServiceCode string                               `json:"f_ypiresia_sepe"`
+	MunicipalCode   string                               `json:"f_kallikratis_pararthmatos"`
+	Comments        string                               `json:"f_comments"`
+	Ergazomenoi     ConstructionWorkerErgazomenoiPayload `json:"Ergazomenoi"`
+	Year            string                               `json:"f_year"`
+	Month           string                               `json:"f_month"`
 }
 
 // InternshipPayload is the flat set of the fields of a internship declaration.
@@ -416,133 +414,133 @@ type InternshipPayload struct {
 
 // ParentalLeavePayload is the flat set of the fields of a parentalleave declaration.
 type ParentalLeavePayload struct {
-	BranchNumber               string          `json:"f_aa_pararthmatos"`
-	RelatedProtocol            string          `json:"f_rel_protocol"`
-	RelatedDate                Date            `json:"f_rel_date"`
-	SEPEServiceCode            string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode           string          `json:"f_ypiresia_oaed"`
-	PaymentFromForea           Bool            `json:"f_payment_from_forea"`
-	Category                   string          `json:"f_category"`
-	AFMErgazom                 string          `json:"f_afm_ergazom"`
-	AMKAErgazom                string          `json:"f_amka_ergazom"`
-	AmIkaErgazom               string          `json:"f_am_ika_ergazom"`
-	Eponimo                    string          `json:"f_eponimo"`
-	FirstName                  string          `json:"f_onoma"`
-	DateProslipsis             Date            `json:"f_date_proslipsis"`
-	BetterSettingExists        Bool            `json:"f_better_setting_exists"`
-	BetterSettingDescr         string          `json:"f_better_setting_descr"`
-	KathestosApasxolisis       string          `json:"f_kathestos_apasxolisis"`
-	SxeshApasxolisis           string          `json:"f_sxesh_apasxolisis"`
-	WeeklyPattern              string          `json:"f_week_days"`
-	WeeklyHours                Hours           `json:"f_week_hours"`
-	ForeasKyriasAsfalisis      string          `json:"f_foreas_kyrias_asfalisis"`
-	ForeasEpikourikhsAsfalisis string          `json:"f_foreas_epikourikhs_asfalisis"`
-	OneParent                  Bool            `json:"f_one_parent"`
-	OneParentCase              string          `json:"f_one_parent_case"`
-	TeknoFromPolydymhKyhsh     Bool            `json:"f_tekno_from_polydymh_kyhsh"`
-	TroposXorhghshsAdeias      Bool            `json:"f_tropos_xorhghshs_adeias"`
-	DateEnarxisAdeias          Date            `json:"f_date_enarxis_adeias"`
-	DateLhxhsAdeias            Date            `json:"f_date_lhxhs_adeias"`
-	Comments                   string          `json:"f_comments"`
-	AFMProswpoy                string          `json:"f_afm_proswpoy"`
-	Kas                        json.RawMessage `json:"Amkas"`
-	Tes                        json.RawMessage `json:"Dates"`
+	BranchNumber               string                    `json:"f_aa_pararthmatos"`
+	RelatedProtocol            string                    `json:"f_rel_protocol"`
+	RelatedDate                Date                      `json:"f_rel_date"`
+	SEPEServiceCode            string                    `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode           string                    `json:"f_ypiresia_oaed"`
+	PaymentFromForea           Bool                      `json:"f_payment_from_forea"`
+	Category                   string                    `json:"f_category"`
+	AFMErgazom                 string                    `json:"f_afm_ergazom"`
+	AMKAErgazom                string                    `json:"f_amka_ergazom"`
+	AmIkaErgazom               string                    `json:"f_am_ika_ergazom"`
+	Eponimo                    string                    `json:"f_eponimo"`
+	FirstName                  string                    `json:"f_onoma"`
+	DateProslipsis             Date                      `json:"f_date_proslipsis"`
+	BetterSettingExists        Bool                      `json:"f_better_setting_exists"`
+	BetterSettingDescr         string                    `json:"f_better_setting_descr"`
+	KathestosApasxolisis       string                    `json:"f_kathestos_apasxolisis"`
+	SxeshApasxolisis           string                    `json:"f_sxesh_apasxolisis"`
+	WeeklyPattern              string                    `json:"f_week_days"`
+	WeeklyHours                Hours                     `json:"f_week_hours"`
+	ForeasKyriasAsfalisis      string                    `json:"f_foreas_kyrias_asfalisis"`
+	ForeasEpikourikhsAsfalisis string                    `json:"f_foreas_epikourikhs_asfalisis"`
+	OneParent                  Bool                      `json:"f_one_parent"`
+	OneParentCase              string                    `json:"f_one_parent_case"`
+	TeknoFromPolydymhKyhsh     Bool                      `json:"f_tekno_from_polydymh_kyhsh"`
+	TroposXorhghshsAdeias      Bool                      `json:"f_tropos_xorhghshs_adeias"`
+	DateEnarxisAdeias          Date                      `json:"f_date_enarxis_adeias"`
+	DateLhxhsAdeias            Date                      `json:"f_date_lhxhs_adeias"`
+	Comments                   string                    `json:"f_comments"`
+	AFMProswpoy                string                    `json:"f_afm_proswpoy"`
+	Amkas                      ParentalLeaveAmkasPayload `json:"Amkas"`
+	Dates                      ParentalLeaveDatesPayload `json:"Dates"`
 }
 
 // MotorcyclePayload is the flat set of the fields of a motorcycle declaration.
 type MotorcyclePayload struct {
-	BranchNumber     string          `json:"f_aa_pararthmatos"`
-	SEPEServiceCode  string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode string          `json:"f_ypiresia_oaed"`
-	Comments         string          `json:"f_comments"`
-	AFMProswpoy      string          `json:"f_afm_proswpoy"`
-	Xanes            json.RawMessage `json:"Mixanes"`
+	BranchNumber     string                   `json:"f_aa_pararthmatos"`
+	SEPEServiceCode  string                   `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode string                   `json:"f_ypiresia_oaed"`
+	Comments         string                   `json:"f_comments"`
+	AFMProswpoy      string                   `json:"f_afm_proswpoy"`
+	Mixanes          MotorcycleMixanesPayload `json:"Mixanes"`
 }
 
 // UrgentHiringPayload is the flat set of the fields of a urgenthiring declaration.
 type UrgentHiringPayload struct {
-	BranchNumber                  string          `json:"f_aa_pararthmatos"`
-	RelatedProtocol               string          `json:"f_rel_protocol"`
-	RelatedDate                   Date            `json:"f_rel_date"`
-	BranchActivityCode            string          `json:"f_kad_pararthmatos"`
-	MunicipalCode                 string          `json:"f_kallikratis_pararthmatos"`
-	TaxID                         string          `json:"f_afm"`
-	Til                           string          `json:"f_til"`
-	HireDate                      Date            `json:"f_proslipsidate"`
-	HireTime                      Time            `json:"f_proslipsitime"`
-	LeaveTime                     Time            `json:"f_apoxwrisitime"`
-	SecondWorkingDate             Date            `json:"f_second_working_date"`
-	SecondWorkingDatetime         Time            `json:"f_second_working_datetime"`
-	CondWorkingDatetimeApoxwrisis string          `json:"second_working_datetime_apoxwrisis"`
-	ProfessionCode                string          `json:"f_eidikothta"`
-	ProfessionDescription         string          `json:"f_eidikothta_anal"`
-	InsuranceFund                 string          `json:"f_proipiresia"`
-	MonthlyWages                  Amount          `json:"f_apodoxes"`
-	WagesPaymentFrequency         string          `json:"f_xronos_katavolis_apodoxon"`
-	HasDeclaredPlaceOfWork        Bool            `json:"f_topos_ergasias"`
-	PlaceOfWorkNotes              string          `json:"f_topos_ergasias_comment"`
-	WorkerCategory                string          `json:"f_xaraktirismos"`
-	HasCollectiveAgreement        Bool            `json:"f_efarmoste_sillogiki_simbasi"`
-	CollectiveAgreementNotes      string          `json:"f_efarmoste_sillogiki_simbasi_comments"`
-	PrimaryInsuranceFund          string          `json:"f_kyria_asfalisi"`
-	IkourikiSelections            json.RawMessage `json:"EpikourikiSelections"`
-	WeeklyPattern                 string          `json:"f_week_days"`
-	BreakMinutes                  Minutes         `json:"f_dialeimma_minutes"`
-	BreakWithinSchedule           Bool            `json:"f_dialeimma_entos_wrariou"`
-	FlexibleArrivalMinutes        Minutes         `json:"f_euelikto_wrario_minutes"`
-	Comments                      string          `json:"f_comments"`
+	BranchNumber                    string                                  `json:"f_aa_pararthmatos"`
+	RelatedProtocol                 string                                  `json:"f_rel_protocol"`
+	RelatedDate                     Date                                    `json:"f_rel_date"`
+	BranchActivityCode              string                                  `json:"f_kad_pararthmatos"`
+	MunicipalCode                   string                                  `json:"f_kallikratis_pararthmatos"`
+	TaxID                           string                                  `json:"f_afm"`
+	Til                             string                                  `json:"f_til"`
+	HireDate                        Date                                    `json:"f_proslipsidate"`
+	HireTime                        Time                                    `json:"f_proslipsitime"`
+	LeaveTime                       Time                                    `json:"f_apoxwrisitime"`
+	SecondWorkingDate               Date                                    `json:"f_second_working_date"`
+	SecondWorkingDatetime           Time                                    `json:"f_second_working_datetime"`
+	SecondWorkingDatetimeApoxwrisis string                                  `json:"second_working_datetime_apoxwrisis"`
+	ProfessionCode                  string                                  `json:"f_eidikothta"`
+	ProfessionDescription           string                                  `json:"f_eidikothta_anal"`
+	InsuranceFund                   string                                  `json:"f_proipiresia"`
+	MonthlyWages                    Amount                                  `json:"f_apodoxes"`
+	WagesPaymentFrequency           string                                  `json:"f_xronos_katavolis_apodoxon"`
+	HasDeclaredPlaceOfWork          Bool                                    `json:"f_topos_ergasias"`
+	PlaceOfWorkNotes                string                                  `json:"f_topos_ergasias_comment"`
+	WorkerCategory                  string                                  `json:"f_xaraktirismos"`
+	HasCollectiveAgreement          Bool                                    `json:"f_efarmoste_sillogiki_simbasi"`
+	CollectiveAgreementNotes        string                                  `json:"f_efarmoste_sillogiki_simbasi_comments"`
+	PrimaryInsuranceFund            string                                  `json:"f_kyria_asfalisi"`
+	EpikourikiSelections            UrgentHiringEpikourikiSelectionsPayload `json:"EpikourikiSelections"`
+	WeeklyPattern                   string                                  `json:"f_week_days"`
+	BreakMinutes                    Minutes                                 `json:"f_dialeimma_minutes"`
+	BreakWithinSchedule             Bool                                    `json:"f_dialeimma_entos_wrariou"`
+	FlexibleArrivalMinutes          Minutes                                 `json:"f_euelikto_wrario_minutes"`
+	Comments                        string                                  `json:"f_comments"`
 }
 
 // AnnualLeavePayload is the flat set of the fields of a annualleave declaration.
 type AnnualLeavePayload struct {
-	BranchNumber       string          `json:"f_aa_pararthmatos"`
-	RelatedProtocol    string          `json:"f_rel_protocol"`
-	RelatedDate        Date            `json:"f_rel_date"`
-	Year               string          `json:"f_year"`
-	SEPEServiceCode    string          `json:"f_ypiresia_sepe"`
-	ErgodotikhOrganwsh string          `json:"f_ergodotikh_organwsh"`
-	KADKyria           string          `json:"f_kad_kyria"`
-	KADDeyt1           string          `json:"f_kad_deyt_1"`
-	KADDeyt2           string          `json:"f_kad_deyt_2"`
-	KADDeyt3           string          `json:"f_kad_deyt_3"`
-	KADDeyt4           string          `json:"f_kad_deyt_4"`
-	BranchActivityCode string          `json:"f_kad_pararthmatos"`
-	MunicipalCode      string          `json:"f_kallikratis_pararthmatos"`
-	Comments           string          `json:"f_comments"`
-	AFMProswpoy        string          `json:"f_afm_proswpoy"`
-	Gazomenoi          json.RawMessage `json:"Ergazomenoi"`
+	BranchNumber       string                        `json:"f_aa_pararthmatos"`
+	RelatedProtocol    string                        `json:"f_rel_protocol"`
+	RelatedDate        Date                          `json:"f_rel_date"`
+	Year               string                        `json:"f_year"`
+	SEPEServiceCode    string                        `json:"f_ypiresia_sepe"`
+	ErgodotikhOrganwsh string                        `json:"f_ergodotikh_organwsh"`
+	KADKyria           string                        `json:"f_kad_kyria"`
+	KADDeyt1           string                        `json:"f_kad_deyt_1"`
+	KADDeyt2           string                        `json:"f_kad_deyt_2"`
+	KADDeyt3           string                        `json:"f_kad_deyt_3"`
+	KADDeyt4           string                        `json:"f_kad_deyt_4"`
+	BranchActivityCode string                        `json:"f_kad_pararthmatos"`
+	MunicipalCode      string                        `json:"f_kallikratis_pararthmatos"`
+	Comments           string                        `json:"f_comments"`
+	AFMProswpoy        string                        `json:"f_afm_proswpoy"`
+	Ergazomenoi        AnnualLeaveErgazomenoiPayload `json:"Ergazomenoi"`
 }
 
 // IGEEReportPayload is the flat set of the fields of a igeereport declaration.
 type IGEEReportPayload struct {
-	AFMErgodoti      string          `json:"f_afm_ergodoti"`
-	ProtocolSxet     string          `json:"f_protocol_sxet"`
-	DateSxet         Date            `json:"f_date_sxet"`
-	Aa               string          `json:"f_aa"`
-	Year             string          `json:"f_year"`
-	Eksamhno         string          `json:"f_eksamhno"`
-	Kallikratis      string          `json:"f_kallikratis"`
-	SEPEServiceCode  string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode string          `json:"f_ypiresia_oaed"`
-	NoMediation      string          `json:"f_no_mediation"`
-	Comments         string          `json:"f_comments"`
-	Tails            json.RawMessage `json:"Details"`
+	AFMErgodoti      string                   `json:"f_afm_ergodoti"`
+	ProtocolSxet     string                   `json:"f_protocol_sxet"`
+	DateSxet         Date                     `json:"f_date_sxet"`
+	Aa               string                   `json:"f_aa"`
+	Year             string                   `json:"f_year"`
+	Eksamhno         string                   `json:"f_eksamhno"`
+	Kallikratis      string                   `json:"f_kallikratis"`
+	SEPEServiceCode  string                   `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode string                   `json:"f_ypiresia_oaed"`
+	NoMediation      string                   `json:"f_no_mediation"`
+	Comments         string                   `json:"f_comments"`
+	Details          IGEEReportDetailsPayload `json:"Details"`
 }
 
 // EPAReportPayload is the flat set of the fields of a epareport declaration.
 type EPAReportPayload struct {
-	AFMErgodoti      string          `json:"f_afm_ergodoti"`
-	ProtocolSxet     string          `json:"f_protocol_sxet"`
-	DateSxet         Date            `json:"f_date_sxet"`
-	Aa               string          `json:"f_aa"`
-	Year             string          `json:"f_year"`
-	Eksamhno         string          `json:"f_eksamhno"`
-	Kallikratis      string          `json:"f_kallikratis"`
-	SEPEServiceCode  string          `json:"f_ypiresia_sepe"`
-	OAEEDServiceCode string          `json:"f_ypiresia_oaed"`
-	NoMediation      string          `json:"f_no_mediation"`
-	Comments         string          `json:"f_comments"`
-	Tails            json.RawMessage `json:"Details"`
+	AFMErgodoti      string                  `json:"f_afm_ergodoti"`
+	ProtocolSxet     string                  `json:"f_protocol_sxet"`
+	DateSxet         Date                    `json:"f_date_sxet"`
+	Aa               string                  `json:"f_aa"`
+	Year             string                  `json:"f_year"`
+	Eksamhno         string                  `json:"f_eksamhno"`
+	Kallikratis      string                  `json:"f_kallikratis"`
+	SEPEServiceCode  string                  `json:"f_ypiresia_sepe"`
+	OAEEDServiceCode string                  `json:"f_ypiresia_oaed"`
+	NoMediation      string                  `json:"f_no_mediation"`
+	Comments         string                  `json:"f_comments"`
+	Details          EPAReportDetailsPayload `json:"Details"`
 }
 
 // HireNoticePayload is the flat set of the fields of a hirenotice declaration.
@@ -666,4 +664,156 @@ type HireNoticePayload struct {
 	File                                    Base64  `json:"f_file"`
 	ForeignWorkerFile                       Base64  `json:"f_foreign_file"`
 	MinorWorkerFile                         Base64  `json:"f_young_file"`
+}
+
+// HireEpikourikiSelectionsPayload is a nested object of a hire declaration.
+type HireEpikourikiSelectionsPayload map[string]HireEpikourikiSelections
+
+// HireEpikourikiSelections is the inner object of a nested object of a hire declaration.
+type HireEpikourikiSelections struct {
+	KodEpikourikis string `json:"f_kod_epikourikis"`
+}
+
+// EmploymentChangeTypesMetabolonPayload is a nested object of a employmentchange declaration.
+type EmploymentChangeTypesMetabolonPayload map[string]EmploymentChangeTypesMetabolon
+
+// EmploymentChangeTypesMetabolon is the inner object of a nested object of a employmentchange declaration.
+type EmploymentChangeTypesMetabolon struct {
+	TyposMetabolhs string `json:"f_typos_metabolhs"`
+}
+
+// EmploymentChangeEpikourikesPayload is a nested object of a employmentchange declaration.
+type EmploymentChangeEpikourikesPayload map[string][]EmploymentChangeEpikourikesEntry
+
+// EmploymentChangeEpikourikesEntry is the inner object of a nested object of a employmentchange declaration.
+type EmploymentChangeEpikourikesEntry struct {
+	EpikourikiKod string `json:"f_epikouriki_kod"`
+}
+
+// ConstructionWorkerErgazomenoiPayload is a nested object of a constructionworker declaration.
+type ConstructionWorkerErgazomenoiPayload map[string]ConstructionWorkerErgazomenoi
+
+// ConstructionWorkerErgazomenoi is the inner object of a nested object of a constructionworker declaration.
+type ConstructionWorkerErgazomenoi struct {
+	TaxID                string  `json:"f_afm"`
+	SocialSecurityNumber string  `json:"f_amka"`
+	Ama                  string  `json:"f_ama"`
+	LastName             string  `json:"f_eponymo"`
+	FirstName            string  `json:"f_onoma"`
+	OnomaPatera          string  `json:"f_onoma_patera"`
+	Date                 *Date   `json:"f_date,omitempty"`
+	From                 *Time   `json:"f_from,omitempty"`
+	To                   *Time   `json:"f_to,omitempty"`
+	Cancellation         *Bool   `json:"f_cancellation,omitempty"`
+	Step                 string  `json:"f_step"`
+	ArAdeias             string  `json:"f_ar_adeias"`
+	HireDate             Date    `json:"f_hire_date"`
+	MonthlyWages         Amount  `json:"f_apodoxes"`
+	Notes                string  `json:"f_notes"`
+	DaysWorked           *string `json:"f_days_worked,omitempty"`
+}
+
+// ParentalLeaveAmkasPayload is a nested object of a parentalleave declaration.
+type ParentalLeaveAmkasPayload map[string]ParentalLeaveAmkas
+
+// ParentalLeaveAmkas is the inner object of a nested object of a parentalleave declaration.
+type ParentalLeaveAmkas struct {
+	SocialSecurityNumber string `json:"f_amka"`
+	XorhghshAdeias       Bool   `json:"f_xorhghsh_adeias"`
+	PolydymhKyhsh        Bool   `json:"f_polydymh_kyhsh"`
+}
+
+// ParentalLeaveDatesPayload is a nested object of a parentalleave declaration.
+type ParentalLeaveDatesPayload map[string][]ParentalLeaveDatesEntry
+
+// ParentalLeaveDatesEntry is the inner object of a nested object of a parentalleave declaration.
+type ParentalLeaveDatesEntry struct {
+	DateLeave    Date    `json:"f_date_leave"`
+	HourFrom     *Time   `json:"f_hour_from,omitempty"`
+	HourTo       *Time   `json:"f_hour_to,omitempty"`
+	OrarioFrom   *Time   `json:"f_orario_from,omitempty"`
+	OrarioTo     *Time   `json:"f_orario_to,omitempty"`
+	PliresOrario *string `json:"f_plires_orario,omitempty"`
+}
+
+// MotorcycleMixanesPayload is a nested object of a motorcycle declaration.
+type MotorcycleMixanesPayload map[string]MotorcycleMixanes
+
+// MotorcycleMixanes is the inner object of a nested object of a motorcycle declaration.
+type MotorcycleMixanes struct {
+	LicencePlate       string `json:"f_licence_plate"`
+	IsOwner            Bool   `json:"f_is_owner"`
+	AFMErgazomenou     string `json:"f_afm_ergazomenou"`
+	EponimoErgazomenou string `json:"f_eponimo_ergazomenou"`
+	OnomaErgazomenou   string `json:"f_onoma_ergazomenou"`
+	OnomaPatera        string `json:"f_onoma_patera"`
+	DateEnarxisXrisis  Date   `json:"f_date_enarxis_xrisis"`
+	HourEnarxisXrisis  Time   `json:"f_hour_enarxis_xrisis"`
+	DateLixisXrisis    Date   `json:"f_date_lixis_xrisis"`
+	Paratiriseis       string `json:"f_paratiriseis"`
+}
+
+// UrgentHiringEpikourikiSelectionsPayload is a nested object of a urgenthiring declaration.
+type UrgentHiringEpikourikiSelectionsPayload map[string]UrgentHiringEpikourikiSelections
+
+// UrgentHiringEpikourikiSelections is the inner object of a nested object of a urgenthiring declaration.
+type UrgentHiringEpikourikiSelections struct {
+	KodEpikourikis string `json:"f_kod_epikourikis"`
+}
+
+// AnnualLeaveErgazomenoiPayload is a nested object of a annualleave declaration.
+type AnnualLeaveErgazomenoiPayload map[string]AnnualLeaveErgazomenoi
+
+// AnnualLeaveErgazomenoi is the inner object of a nested object of a annualleave declaration.
+type AnnualLeaveErgazomenoi struct {
+	Aa                           string `json:"f_aa"`
+	TaxID                        string `json:"f_afm"`
+	SocialSecurityNumber         string `json:"f_amka"`
+	SocialSecurityRegistryNumber string `json:"f_amika"`
+	LastName                     string `json:"f_eponymo"`
+	FirstName                    string `json:"f_onoma"`
+	HireDate                     Date   `json:"f_proslipsidate"`
+	DaysRight                    Count  `json:"f_days_right"`
+	DaysReceived                 Count  `json:"f_days_received"`
+	MonthlyWages                 Amount `json:"f_apodoxes"`
+	ApodoxesSup                  Amount `json:"f_apodoxes_sup"`
+	Comments                     string `json:"f_comments"`
+}
+
+// IGEEReportDetailsPayload is a nested object of a igeereport declaration.
+type IGEEReportDetailsPayload map[string][]IGEEReportDetailsEntry
+
+// IGEEReportDetailsEntry is the inner object of a nested object of a igeereport declaration.
+type IGEEReportDetailsEntry struct {
+	TaxID          string `json:"f_afm"`
+	LastName       string `json:"f_eponymo"`
+	FirstName      string `json:"f_onoma"`
+	Sex            string `json:"f_sex"`
+	Age            Count  `json:"f_age"`
+	EducationLevel string `json:"f_epipedo_morfosis"`
+	ProfessionCode string `json:"f_eidikothta"`
+	Unemployed     string `json:"f_unemployed"`
+	Nationality    string `json:"f_nationality"`
+}
+
+// EPAReportDetailsPayload is a nested object of a epareport declaration.
+type EPAReportDetailsPayload map[string]EPAReportDetails
+
+// EPAReportDetails is the inner object of a nested object of a epareport declaration.
+type EPAReportDetails struct {
+	TaxID                  string `json:"f_afm"`
+	LastName               string `json:"f_eponymo"`
+	FirstName              string `json:"f_onoma"`
+	Sex                    string `json:"f_sex"`
+	Age                    Count  `json:"f_age"`
+	EducationLevel         string `json:"f_epipedo_morfosis"`
+	ArSumbasewnEksamhnou   string `json:"f_ar_sumbasewn_eksamhnou"`
+	DateEnarksis           Date   `json:"f_date_enarksis"`
+	DateLiksis             Date   `json:"f_date_liksis"`
+	ProfessionCode         string `json:"f_eidikothta"`
+	UnemploymentMonths     string `json:"f_unemployment_months"`
+	AFMEmmesouErgodot      string `json:"f_afm_emmesou_ergodot"`
+	EponymiaEmmesouErgodot string `json:"f_eponymia_emmesou_ergodot"`
+	Confirmation           string `json:"f_confirmation"`
+	Comments               string `json:"f_comments"`
 }

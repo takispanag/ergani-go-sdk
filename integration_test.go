@@ -2,11 +2,10 @@ package ergani_test
 
 import (
 	"context"
+	"github.com/takispanag/ergani-go-sdk"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/takispanag/ergani-go-sdk"
 )
 
 // The integration tests talk to the Ergani platform, so they need

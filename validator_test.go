@@ -2,10 +2,9 @@ package ergani_test
 
 import (
 	"errors"
+	"github.com/takispanag/ergani-go-sdk"
 	"testing"
 	"time"
-
-	"github.com/takispanag/ergani-go-sdk"
 )
 
 func TestValidateWorkCards(t *testing.T) {

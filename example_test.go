@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/takispanag/ergani-go-sdk"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/takispanag/ergani-go-sdk"
 )
 
 // ExampleNew shows how to create a client.

@@ -4,12 +4,11 @@ package ergani
 
 import (
 	"encoding/json"
+	"github.com/takispanag/ergani-go-sdk/internal/wire"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/takispanag/ergani-go-sdk/internal/wire"
 )
 
 // declarationSample is a reference payload of the Ministry and the way to

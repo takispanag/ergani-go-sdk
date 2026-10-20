@@ -3,9 +3,8 @@ package ergani
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/takispanag/ergani-go-sdk/internal/wire"
+	"time"
 )
 
 // ScheduleVariant is a type of the working time organisation declaration.

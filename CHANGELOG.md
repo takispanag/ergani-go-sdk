@@ -10,6 +10,40 @@ may break the public API.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
+The release that types the nested objects of the declarations, and that puts
+the files of the package in the place their concern belongs to.
+
+### Fixed
+
+- **The nested objects of a declaration are typed.** The beneficiary fund
+  selections, the types of a change, the workers of a construction site, the
+  insurance numbers, the vehicles, the leaves and the details of the reports
+  were carried as raw JSON. They have their own type now, and the fields the
+  API may leave out are pointers.
+- The inner object of a nested object is named after the declaration type by
+  the API. The renaming happens in the wire layer, so the public type is the
+  same for every variant of a family and the caller never has to know the
+  name the API expects.
+- A field that only some of the variants, or some of the entries of a list,
+  carry is left out, the way the API leaves it out.
+- A number the API writes with three digits, such as the age of an employee
+  of an employment office, is written with three digits again.
+
+### Changed
+
+- **Breaking** The models of the declarations are generated now, out of the
+  reference payloads and the schemas of the Ministry. The generator is
+  committed under `tools/`, and it writes the wire structs, the public
+  models, the translation between them and the test that compares every
+  payload with the reference payload of the Ministry.
+- **Breaking** The files of the package are organised by concern: the client,
+  the options, the request plumbing, the credentials, the errors, the codes,
+  the enumerated values, the models, the declarations, the services, the
+  validator and the schemas. The wire format and the schemas of the Ministry
+  live under `internal/`.
+
 ## [0.4.0] - 2026-10-21
 
 The release that covers the declaration types of the platform. Every one of

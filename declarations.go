@@ -2,7 +2,6 @@
 
 package ergani
 
-import "encoding/json"
 import "time"
 
 // HireDeclaration is the declaration of the hire of an employer.
@@ -181,7 +180,7 @@ type HireDeclaration struct {
 	RehabilitationRecord string
 	// PrimaryInsuranceFund — ΚΥΡΙΑ ΑΣΦΑΛΙΣΗ
 	PrimaryInsuranceFund string
-	IkourikiSelections   json.RawMessage
+	EpikourikiSelections *HireBeneficiarySelection
 	// SupplementaryInsuranceFund — ΠΡΟΣΘΕΤΕΣ ΑΣΦΑΛΙΣΤΙΚΕΣ ΠΑΡΟΧΕΣ
 	SupplementaryInsuranceFund string
 	// TransferDate — ΗΜΕΡΟΜΗΝΙΑ ΜΕΤΑΒΙΒΑΣΗΣ
@@ -539,9 +538,9 @@ type EmploymentChangeDeclaration struct {
 	// File — Αρχείο Εντύπου Αρχείο(pdf)
 	File []byte
 	// EpibolhFile — Αρχείο Απόφασης Επιβολής Συστήματος εκ Περιτροπής Απασχόλησης(pdf)
-	EpibolhFile  string
-	PesMetabolon json.RawMessage
-	Ikourikes    json.RawMessage
+	EpibolhFile    string
+	TypesMetabolon *ChangeTypeSelection
+	Epikourikes    []InsuranceSelection
 	// WagesPaymentMethod — ΚΑΤΑΒΟΛΗ ΑΠΟΔΟΧΩΝ (0) Από άμεσο εργοδότη/ΕΠΑ (1) Από έμμεσο εργοδότη
 	WagesPaymentMethod string
 }
@@ -561,8 +560,8 @@ type ConstructionWorkerDeclaration struct {
 	// MunicipalCode — ΔΗΜΟΤΙΚΗ / ΤΟΠΙΚΗ ΚΟΙΝΟΤΗΤΑ
 	MunicipalCode string
 	// Comments — ΣΧΟΛΙΑ
-	Comments  string
-	Gazomenoi json.RawMessage
+	Comments    string
+	Ergazomenoi *ConstructionEmployee
 	// Year — ΕΤΟΣ
 	Year string
 	// Month — ΜΗΝΑΣ - (1-12) Ιανουάριος - Δεκέμβριος
@@ -861,8 +860,8 @@ type ParentalLeaveDeclaration struct {
 	Comments string
 	// AFMProswpoy — Νόμιμος Εκπρόσωπος(Α.Φ.Μ.)
 	AFMProswpoy string
-	Kas         json.RawMessage
-	Tes         json.RawMessage
+	Amkas       *ParentalLeaveSocialSecurityNumber
+	Dates       []ParentalLeaveDate
 }
 
 // MotorcycleDeclaration is the declaration of the motorcycle of an employer.
@@ -877,7 +876,7 @@ type MotorcycleDeclaration struct {
 	Comments string
 	// AFMProswpoy — Νόμιμος Εκπρόσωπος(Α.Φ.Μ.)
 	AFMProswpoy string
-	Xanes       json.RawMessage
+	Mixanes     *Motorcycle
 }
 
 // UrgentHiringDeclaration is the declaration of the urgenthiring of an employer.
@@ -905,8 +904,8 @@ type UrgentHiringDeclaration struct {
 	// SecondWorkingDate — ΔΕΥΤΕΡΗ ΗΜΕΡΟΜΗΝΙΑ ΑΠΑΣΧΟΛΗΣΗΣ
 	SecondWorkingDate time.Time
 	// SecondWorkingDatetime — ΩΡΑ ΕΝΑΡΞΗΣ ΕΡΓΑΣΙΑΣ (κατά τη δεύτερη ημέρα απασχόλησης) (HH24:MM)
-	SecondWorkingDatetime         time.Time
-	CondWorkingDatetimeApoxwrisis string
+	SecondWorkingDatetime           time.Time
+	SecondWorkingDatetimeApoxwrisis string
 	// ProfessionCode — ΚΩΔΙΚΟΣ ΕΙΔΙΚΟΤΗΤΑΣ
 	ProfessionCode string
 	// ProfessionDescription — ΕΙΔΙΚΟΤΗΤΑ (Αναλυτικά)
@@ -929,7 +928,7 @@ type UrgentHiringDeclaration struct {
 	CollectiveAgreementNotes string
 	// PrimaryInsuranceFund — ΚΥΡΙΑ ΑΣΦΑΛΙΣΗ
 	PrimaryInsuranceFund string
-	IkourikiSelections   json.RawMessage
+	EpikourikiSelections *UrgentHiringBeneficiarySelection
 	// WeeklyPattern — ΕΒΔΟΜΑΔΙΑΙΑ ΑΠΑΣΧΟΛΗΣΗ (5) ΠΕΝΘΗΜΕΡΟ (6) ΕΞΑΗΜΕΡΟ
 	WeeklyPattern WeekPattern
 	// BreakMinutes — ΔΙΑΛΕΙΜΜΑ (ΛΕΠΤΑ)
@@ -974,7 +973,7 @@ type AnnualLeaveDeclaration struct {
 	Comments string
 	// AFMProswpoy — Νόμιμος Εκπρόσωπος(Α.Φ.Μ.)
 	AFMProswpoy string
-	Gazomenoi   json.RawMessage
+	Ergazomenoi *AnnualLeaveEmployee
 }
 
 // IGEEReportDeclaration is the declaration of the igeereport of an employer.
@@ -1001,7 +1000,7 @@ type IGEEReportDeclaration struct {
 	NoMediation string
 	// Comments — ΣΧΟΛΙΑ
 	Comments string
-	Tails    json.RawMessage
+	Details  []IGEEReportDetail
 }
 
 // EPAReportDeclaration is the declaration of the epareport of an employer.
@@ -1028,7 +1027,7 @@ type EPAReportDeclaration struct {
 	NoMediation string
 	// Comments — ΣΧΟΛΙΑ
 	Comments string
-	Tails    json.RawMessage
+	Details  *EPAReportDetail
 }
 
 // HireNoticeDeclaration is the declaration of the hirenotice of an employer.
@@ -1271,4 +1270,198 @@ type HireNoticeDeclaration struct {
 	ForeignWorkerFile []byte
 	// MinorWorkerFile — Αρχείο Βιβιαρίου Ανηλίκου Εργαζομένου(pdf)
 	MinorWorkerFile []byte
+}
+
+// HireBeneficiarySelection is a part of a hire declaration.
+type HireBeneficiarySelection struct {
+	// KodEpikourikis — ΚΩΔΙΚΟΣ ΕΠΙΚΟΥΡΙΚΗΣ ΑΣΦΑΛΙΣΗΣ
+	KodEpikourikis string
+}
+
+// ChangeTypeSelection is a part of a employmentchange declaration.
+type ChangeTypeSelection struct {
+	// TyposMetabolhs — ΚΩΔΙΚΟΣ ΤΥΠΟΥ ΜΕΤΑΒΟΛΗΣ
+	TyposMetabolhs string
+}
+
+// InsuranceSelection is a part of a employmentchange declaration.
+type InsuranceSelection struct {
+	// EpikourikiKod — ΚΩΔΙΚΟΣ ΕΠΙΚΟΥΡΙΚΗΣ ΑΣΦΑΛΙΣΗΣ
+	EpikourikiKod string
+}
+
+// ConstructionEmployee is a part of a constructionworker declaration.
+type ConstructionEmployee struct {
+	// TaxID — ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)
+	TaxID string
+	// SocialSecurityNumber — ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΚΟΙΝΩΝΙΚΗΣ ΑΣΦΑΛΙΣΗΣ (Α.Μ.Κ.Α.)
+	SocialSecurityNumber string
+	// Ama — ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΑΣΦΑΛΙΣΜΕΝΟΥ Α.Μ.Α.
+	Ama string
+	// LastName — ΕΠΩΝΥΜΟ
+	LastName string
+	// FirstName — ΟΝΟΜΑ
+	FirstName string
+	// OnomaPatera — ΟΝΟΜΑ ΠΑΤΕΡΑ
+	OnomaPatera string
+	// Date — ΗΜ/ΝΙΑ Κίνησης
+	Date *time.Time
+	// From — ΩΡΑ ΕΝΑΡΞΗΣ ΑΠΑΣΧΟΛΗΣΗΣ (HH24:MM)
+	From *time.Time
+	// To — ΩΡΑ ΛΗΞΗΣ ΑΠΑΣΧΟΛΗΣΗΣ (HH24:MM)
+	To *time.Time
+	// Cancellation — ΑΚΥΡΩΣΗ ΑΠΑΣΧΟΛΗΣΗΣ (0) ΌΧΙ (1) ΝΑΙ
+	Cancellation *bool
+	// Step — ΕΙΔΙΚΟΤΗΤΑ ΚΩΔΙΚΟΣ
+	Step string
+	// ArAdeias — ΑΡ. ΑΔ. ΕΡΓΑΣΙΑΣ
+	ArAdeias string
+	// HireDate — ΗΜΕΡΟΜΗΝΙΑ ΠΡΟΣΛΗΨΗΣ
+	HireDate time.Time
+	// MonthlyWages — ΠΟΣΟ ΕΠΙΔΟΜΑΤΟΣ ΕΟΡΤΩΝ ΠΑΣΧΑ 2020 (ΜΙΚΤΕΣ ΑΠΟΔΟΧΕΣ ΕΡΓΑΖΟΜΕΝΟΥ ΚΑΙ ΑΝΑΛΟΓΟΥΣΕΣ ΕΡΓΟΔΟΤΙΚΕΣ ΕΙΣΦΟΡΕΣ ΚΑΙ ΚΡΑΤΗΣΕΙΣ) ΠΟΥ ΑΝΤΙΣΤΟΙΧΕΙ ΣΤΟ ΧΡΟΝΙΚΟ ΔΙΑΣΤΗΜΑ ΑΝΑΣΤΟΛΗΣ ΤΗΣ ΕΡΓΑΣΙΑΚΗΣ ΣΧΕΣΗΣ ΕΚΑΣΤΟΥ ΜΙΣΘΩΤΟΥ ΤΟ ΟΠΟΙΟ ΚΑΛΥΠΤΕΤΑΙ ΑΠΟ ΤΟΝ ΚΡΑΤΙΚΟ ΠΡΟΥΠΟΛΟΓΙΣΜΟ.
+	MonthlyWages float64
+	// Notes — ΠΑΡΑΤΗΡΗΣΕΙΣ
+	Notes string
+	// DaysWorked — ΑΡΙΘΜΟΣ ΗΜΕΡΩΝ ΑΠΑΣΧΟΛΗΣΗΣ
+	DaysWorked *string
+}
+
+// ParentalLeaveSocialSecurityNumber is a part of a parentalleave declaration.
+type ParentalLeaveSocialSecurityNumber struct {
+	// SocialSecurityNumber — ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΚΟΙΝΩΝΙΚΗΣ ΑΣΦΑΛΙΣΗΣ (Α.Μ.Κ.Α.)
+	SocialSecurityNumber string
+	// XorhghshAdeias — ΓΙΑ ΤΟ ΟΠΟΙΟ ΧΟΡΗΓΕΙΤΑΙ Η ΑΔΕΙΑ (0) ΌΧΙ (1) ΝΑΙ
+	XorhghshAdeias *bool
+	// PolydymhKyhsh — ΤΕΚΝΟ ΠΟΛΥΔΥΜΗΣ ΚΥΗΣΗΣ (0) ΌΧΙ (1) ΝΑΙ
+	PolydymhKyhsh *bool
+}
+
+// ParentalLeaveDate is a part of a parentalleave declaration.
+type ParentalLeaveDate struct {
+	// DateLeave — ΗΜΕΡΟΜΗΝΙΑ
+	DateLeave time.Time
+	// HourFrom — ΩΡΑ ΑΠΟ (HH24:MM)
+	HourFrom *time.Time
+	// HourTo — ΩΡΑ ΕΩΣ (HH24:MM)
+	HourTo *time.Time
+	// OrarioFrom — ΩΡΑΡΙΟ ΑΠΟ (HH24:MM)
+	OrarioFrom *time.Time
+	// OrarioTo — ΩΡΑΡΟ ΕΩΣ (HH24:MM)
+	OrarioTo *time.Time
+	// PliresOrario — ΠΛΗΡΕΣ ΩΡΑΡΙΟ (0) ΌΧΙ (1) ΝΑΙ
+	PliresOrario *string
+}
+
+// Motorcycle is a part of a motorcycle declaration.
+type Motorcycle struct {
+	// LicencePlate — ΑΡΙΘΜΟΣ ΚΥΚΛΟΦΟΡΙΑΣ
+	LicencePlate string
+	// IsOwner — ΙΔΙΟΚΤΗΣΙΑ ΝΟΜΗ Ή ΚΑΤΟΧΗ (0) ΕΡΓΟΔΟΤΗΣ (1) ΕΡΓΑΖΟΜΕΝΟΣ
+	IsOwner *bool
+	// AFMErgazomenou — ΑΦΜ ΕΡΓΑΖΟΜΕΝΟΥ
+	AFMErgazomenou string
+	// EponimoErgazomenou — ΕΠΩΝΥΜΟ ΕΡΓΑΖΟΜΕΝΟΥ
+	EponimoErgazomenou string
+	// OnomaErgazomenou — ΟΝΟΜΑ ΕΡΓΑΖΟΜΕΝΟΥ
+	OnomaErgazomenou string
+	// OnomaPatera — ΟΝΟΜΑ ΠΑΤΕΡΑ
+	OnomaPatera string
+	// DateEnarxisXrisis — ΗΜΕΡΟΜΗΝΙΑ ΕΝΑΡΞΗΣ ΧΡΗΣΗΣ ΟΧΗΜΑΤΟΣ
+	DateEnarxisXrisis time.Time
+	// HourEnarxisXrisis — ΩΡΑ ΕΝΑΡΞΗΣ ΧΡΗΣΗΣ ΟΧΗΜΑΤΟΣ (HH24:MM)
+	HourEnarxisXrisis time.Time
+	// DateLixisXrisis — ΗΜΕΡΟΜΗΝΙΑ ΛΗΞΗΣ ΧΡΗΣΗΣ ΟΧΗΜΑΤΟΣ
+	DateLixisXrisis time.Time
+	// Paratiriseis — ΠΑΡΑΤΗΡΗΣΕΙΣ
+	Paratiriseis string
+}
+
+// UrgentHiringBeneficiarySelection is a part of a urgenthiring declaration.
+type UrgentHiringBeneficiarySelection struct {
+	// KodEpikourikis — ΚΩΔΙΚΟΣ ΕΠΙΚΟΥΡΙΚΗΣ ΑΣΦΑΛΙΣΗΣ
+	KodEpikourikis string
+}
+
+// AnnualLeaveEmployee is a part of a annualleave declaration.
+type AnnualLeaveEmployee struct {
+	// Aa — Α/Α ΠΑΡΑΡΤΗΜΑΤΟΣ
+	Aa string
+	// TaxID — ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)
+	TaxID string
+	// SocialSecurityNumber — ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΚΟΙΝΩΝΙΚΗΣ ΑΣΦΑΛΙΣΗΣ (Α.Μ.Κ.Α.)
+	SocialSecurityNumber string
+	// SocialSecurityRegistryNumber — ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ (Ασφαλισμένου) Ι.Κ.Α.
+	SocialSecurityRegistryNumber string
+	// LastName — ΕΠΩΝΥΜΟ
+	LastName string
+	// FirstName — ΟΝΟΜΑ
+	FirstName string
+	// HireDate — ΗΜΕΡΟΜΗΝΙΑ ΠΡΟΣΛΗΨΗΣ
+	HireDate time.Time
+	// DaysRight — ΑΡΙΘΜΟΣ ΗΜΕΡΩΝ ΔΙΚΑΙΟΥΜΕΝΗΣ ΚΑΝΟΝΙΚΗΣ ΑΔΕΙΑΣ
+	DaysRight int
+	// DaysReceived — ΑΡΙΘΜΟΣ ΗΜΕΡΩΝ ΚΑΝΟΝΙΚΗΣ ΑΔΕΙΑΣ ΠΟΥ ΧΟΡΗΓΗΘΗΚΕ
+	DaysReceived int
+	// MonthlyWages — ΠΟΣΟ ΕΠΙΔΟΜΑΤΟΣ ΕΟΡΤΩΝ ΠΑΣΧΑ 2020 (ΜΙΚΤΕΣ ΑΠΟΔΟΧΕΣ ΕΡΓΑΖΟΜΕΝΟΥ ΚΑΙ ΑΝΑΛΟΓΟΥΣΕΣ ΕΡΓΟΔΟΤΙΚΕΣ ΕΙΣΦΟΡΕΣ ΚΑΙ ΚΡΑΤΗΣΕΙΣ) ΠΟΥ ΑΝΤΙΣΤΟΙΧΕΙ ΣΤΟ ΧΡΟΝΙΚΟ ΔΙΑΣΤΗΜΑ ΑΝΑΣΤΟΛΗΣ ΤΗΣ ΕΡΓΑΣΙΑΚΗΣ ΣΧΕΣΗΣ ΕΚΑΣΤΟΥ ΜΙΣΘΩΤΟΥ ΤΟ ΟΠΟΙΟ ΚΑΛΥΠΤΕΤΑΙ ΑΠΟ ΤΟΝ ΚΡΑΤΙΚΟ ΠΡΟΥΠΟΛΟΓΙΣΜΟ.
+	MonthlyWages float64
+	// ApodoxesSup — ΑΠΟΔΟΧΕΣ ΕΠΙΔΟΜΑΤΟΣ ΑΔΕΙΑΣ
+	ApodoxesSup float64
+	// Comments — ΣΧΟΛΙΑ
+	Comments string
+}
+
+// IGEEReportDetail is a part of a igeereport declaration.
+type IGEEReportDetail struct {
+	// TaxID — ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)
+	TaxID string
+	// LastName — ΕΠΩΝΥΜΟ
+	LastName string
+	// FirstName — ΟΝΟΜΑ
+	FirstName string
+	// Sex — ΦΥΛΟ (0) ΑΝΤΡΑΣ (1) ΓΥΝΑΙΚΑ
+	Sex Sex
+	// Age — ΗΛΙΚΙΑ (ΣΕ ΈΤΗ)
+	Age int
+	// EducationLevel — ΚΩΔΙΚΟΣ ΕΠΙΠΕΔΟΥ ΕΚΠΑΙΔΕΥΣΗΣ
+	EducationLevel string
+	// ProfessionCode — ΚΩΔΙΚΟΣ ΕΙΔΙΚΟΤΗΤΑΣ
+	ProfessionCode string
+	// Unemployed — ΚΑΤΑΣΤΑΣΗ ΠΡΙΝ ΤΗ ΜΕΣΟΛΑΒΗΣΗ - ΆΝΕΡΓΟΣ (0) ΌΧΙ (1) ΝΑΙ
+	Unemployed string
+	// Nationality — ΚΩΔΙΚΟΣ ΥΠΗΚΟΟΤΗΤΑΣ
+	Nationality string
+}
+
+// EPAReportDetail is a part of a epareport declaration.
+type EPAReportDetail struct {
+	// TaxID — ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)
+	TaxID string
+	// LastName — ΕΠΩΝΥΜΟ
+	LastName string
+	// FirstName — ΟΝΟΜΑ
+	FirstName string
+	// Sex — ΦΥΛΟ (0) ΑΝΤΡΑΣ (1) ΓΥΝΑΙΚΑ
+	Sex Sex
+	// Age — ΗΛΙΚΙΑ (ΣΕ ΈΤΗ)
+	Age int
+	// EducationLevel — ΚΩΔΙΚΟΣ ΕΠΙΠΕΔΟΥ ΕΚΠΑΙΔΕΥΣΗΣ
+	EducationLevel string
+	// ArSumbasewnEksamhnou — ΑΡ. ΣΥΜΒΑΣΕΩΝ ΕΞΑΜΗΝΟΥ
+	ArSumbasewnEksamhnou string
+	// DateEnarksis — ΗΜ/ΝΙΑ ΕΝΑΡΞΗΣ
+	DateEnarksis time.Time
+	// DateLiksis — ΗΜ/ΝΙΑ ΛΗΞΗΣ
+	DateLiksis time.Time
+	// ProfessionCode — ΚΩΔΙΚΟΣ ΕΙΔΙΚΟΤΗΤΑΣ
+	ProfessionCode string
+	// UnemploymentMonths — ΧΡ. ΠΡΟΓΕΝ. ΑΝΕΡΓΙΑΣ
+	UnemploymentMonths string
+	// AFMEmmesouErgodot — Α.Φ.Μ. ΈΜΜΕΣΟΥ ΕΡΓΟΔΟΤΗ
+	AFMEmmesouErgodot string
+	// EponymiaEmmesouErgodot — ΕΠΩΝΥΜΙΑ ΈΜΜΕΣΟΥ ΕΡΓΟΔΟΤΗ
+	EponymiaEmmesouErgodot string
+	// Confirmation — Δηλώνω υπεύθυνα ότι ο έμμεσος εργοδότης δεν υπάγεται στις διατάξεις του ν. 2190/1994 (Α’ 28) ή στις διατάξεις της παρ. 3 του άρθρου 1 του ν. 2527/1997 (Α ’206), όπως ισχύουν (0) ΌΧΙ (1) ΝΑΙ
+	Confirmation string
+	// Comments — ΣΧΟΛΙΑ
+	Comments string
 }

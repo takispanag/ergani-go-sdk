@@ -70,6 +70,10 @@ for path in sorted(glob.glob(os.path.join(SRC, "*.xsd"))):
         elif pattern and re.fullmatch(r"\[0-9\]\{1,2\}", pattern):
             kind = "count"
         elif pattern and re.fullmatch(r"\[0-9\]\{1,3\}", pattern):
+            kind = "tally"
+        elif pattern and re.fullmatch(r"\[0-9\]\+", pattern):
+            kind = "number"
+        elif pattern and re.fullmatch(r"\[0-9\]\{1,3\}", pattern):
             kind = "minutes"
         else:
             kind = "string"

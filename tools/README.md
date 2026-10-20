@@ -1,4 +1,4 @@
-﻿# The generators of the declarations
+﻿# The generators of the models
 
 `generate_declarations.py` writes the wire structs, the public models, the
 translation between them, the submission methods and the test that compares

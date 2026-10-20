@@ -758,6 +758,34 @@ payload with the reference payload the Ministry publishes, field for field.
 The declarations it does not model yet are submitted with [Client.Submit], and
 the schema of each of them is available from [Client.DocumentSchema].
 
+### The layout of the package
+
+```
+ergani-go-sdk/
+├── doc.go            the package comment
+├── client.go         the client and its constructor
+├── options.go        the options of the client
+├── request.go        the request plumbing: the retries and the backoff
+├── auth.go           the credentials and their renewal
+├── errors.go         the errors and the sentinels
+├── codes.go          the codes of the declaration types
+├── enums.go          the enumerated values
+├── models.go         the models of the card sector
+├── documents.go      the submissions of the card sector
+├── worktime.go       the declarations of the working time organisation
+├── declarations.go   the models of the declaration types, generated
+├── declarations_wire.go  the translation of the models, generated
+├── services.go       the interoperability services
+├── validator.go      the validator of a declaration
+├── schema.go         the schemas of the Ministry
+├── internal/
+│   ├── wire/         the format the API expects
+│   └── schema/       the schemas of the Ministry
+├── cmd/ergani-example/
+├── testdata/         the reference payloads of the Ministry
+└── tools/            the generator of the models
+```
+
 The E8 overtime form was replaced by the working time overtime declarations,
 and the API rejects its payload. `SubmitOvertime` is kept because the form is
 part of the official sample archive, but `SubmitOvertimeSchedules` is the way
