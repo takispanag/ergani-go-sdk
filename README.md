@@ -473,7 +473,8 @@ git clone https://github.com/takispanag/ergani-go-sdk.git
 cd ergani-go-sdk
 
 make test        # run the test suite
-make lint        # run go vet and golangci-lint
+make test-race   # run the test suite with the race detector
+make lint        # run golangci-lint, skipped when it is not installed
 make check       # everything the CI runs
 ```
 
