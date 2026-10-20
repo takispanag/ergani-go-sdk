@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -226,6 +227,9 @@ func (c *Client) DocumentPDF(ctx context.Context, code DocumentCode, protocol st
 }
 
 // submit sends a payload to the API and decodes the acknowledgement.
+//
+// A failure of the API is wrapped in a [DeclarationError], so that the caller
+// knows which type of declaration was rejected.
 func (c *Client) submit(ctx context.Context, code DocumentCode, payload any) ([]Submission, error) {
 	body, err := encode(payload)
 	if err != nil {
@@ -234,6 +238,10 @@ func (c *Client) submit(ctx context.Context, code DocumentCode, payload any) ([]
 
 	data, err := c.call(ctx, http.MethodPost, "/Documents/"+string(code), nil, body, true)
 	if err != nil {
+		var apiErr *APIError
+		if errors.As(err, &apiErr) {
+			return nil, &DeclarationError{Code: code, Err: apiErr}
+		}
 		return nil, err
 	}
 

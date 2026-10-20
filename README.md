@@ -343,13 +343,57 @@ func main() {
 }
 ```
 
+### The employment lifecycle
+
+The digital notifications of Ergani II, the family of the start and of the
+end of an employment, are modelled. The variant selects the type of the
+declaration, and with it the fields the API expects.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = client.SubmitHire(context.Background(), ergani.HireNew, ergani.HireDeclaration{
+		BranchNumber:    "0",
+		SEPEServiceCode: "11080",
+		TaxID:           "028233026",
+		FirstName:       "John",
+		LastName:        "Doe",
+		HireDate:        time.Now(),
+		RelationshipType: ergani.RelationshipIndefinite,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+The end of an employment is declared the same way, with the variant that
+matches the reason: `ergani.TerminationResignation`,
+`ergani.TerminationDismissalWithNotice`,
+`ergani.TerminationRetirement`, and so on.
+
+Every field of these declarations carries the official description of the
+API, and the enumerated fields are typed.
+
 ### The other declaration types
 
-The start and the end of an employment, and the changes of its details, are
-declared with the digital notifications of Ergani II. They share a large
-common part, and the SDK does not model them yet. They are submitted with
-[Client.Submit], and the schema of each of them is available from
-[Client.DocumentSchema].
+The declarations the SDK does not model yet, such as the construction
+workers and the internships, are submitted with [Client.Submit], and the
+schema of each of them is available from [Client.DocumentSchema].
 
 ```go
 package main
@@ -369,7 +413,7 @@ func main() {
 	}
 
 	// The schema of the declaration type, as the API describes it.
-	schema, err := client.DocumentSchema(context.Background(), ergani.CodeHire)
+	schema, err := client.DocumentSchema(context.Background(), ergani.CodeConstructionWorker)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -381,13 +425,111 @@ func main() {
 
 	// The declaration is sent as it is.
 	payload := map[string]any{
-		"AnaggeliesE3N": map[string]any{
-			"AnaggeliaE3N": []any{},
+		"Amoes": map[string]any{
+			"Amoe": []any{},
 		},
 	}
 
-	if _, err := client.Submit(context.Background(), ergani.CodeHire, payload); err != nil {
+	if _, err := client.Submit(context.Background(), ergani.CodeConstructionWorker, payload); err != nil {
 		log.Fatal(err)
+	}
+}
+```
+
+### Checking a declaration before it is sent
+
+The API records a declaration as it is, and it does not check it against the
+schedule that was declared before, which is what the labour inspection looks
+at. The SDK reports the problems it can find on its own.
+
+```go
+package main
+
+import (
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	declarations := []ergani.WorkCardDeclaration{
+		{
+			EmployerTaxID: "094187530",
+			BranchNumber:  "0",
+			Cards: []ergani.WorkCard{
+				{
+					EmployeeTaxID:    "028233026",
+					MovementType:     ergani.MovementArrival,
+					ReferenceDate:    time.Now(),
+					MovementDateTime: time.Now(),
+				},
+			},
+		},
+	}
+
+	for _, problem := range ergani.ValidateWorkCards(declarations) {
+		log.Println("the declaration is not ready:", problem)
+	}
+}
+```
+
+The official schemas of the API are embedded in the SDK, so a payload can
+also be checked against the schema of its type.
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	fields := map[string]any{
+		"f_afm_ergodoti": "094187530",
+		"f_aa":           "0",
+	}
+
+	for _, problem := range ergani.CheckSchema("Card_v1", fields) {
+		fmt.Println(problem)
+	}
+
+	log.Println("the schemas the SDK embeds:", len(ergani.Schemas()))
+}
+```
+
+### Reading the platform back
+
+The interoperability services read what the platform recorded, which is what
+the labour inspector sees.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	diary, err := client.WorkingDiary(context.Background(), "0", time.Now().AddDate(0, -1, 0))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, entry := range diary {
+		log.Printf("%s worked from %s to %s", entry.EmployeeTaxID, entry.FromTime, entry.ToTime)
 	}
 }
 ```

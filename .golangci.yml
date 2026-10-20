@@ -31,6 +31,8 @@ linters-settings:
       - analyse
       # The name of the HTTP status, as the standard library spells it.
       - unauthorized
+      # The official name of the field of the API.
+      - organization
   staticcheck:
     checks: ["all"]
   exhaustive:

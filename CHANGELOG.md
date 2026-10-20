@@ -10,6 +10,55 @@ may break the public API.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-21
+
+The release that completes the API surface. The family of the employment
+lifecycle, the variants of the working time organisation, the services that
+read the platform back, a validator and the official schemas.
+
+### Added
+
+- **The employment lifecycle declarations.** The four notifications of the
+  start of an employment, a hire, a transfer, borrowed staff and a hire for
+  a loan-out, and the thirteen notifications of the end of an employment, the
+  resignations, the dismissals, the retirements, the death, the end of a
+  probation period, the transfer and the end of a fixed term contract.
+  Every field carries the official description of the API, and the
+  enumerated fields are typed.
+- The declaration of a change of the employment relationship for the working
+  time organisation, and the declaration of an exemption from the duty of
+  advance notification.
+- A validator that checks a declaration before it is sent: a movement
+  without a date, a movement dated in the future, a working period that
+  ends before it starts, a tax identification number that is not nine
+  digits.
+- The official schemas of the API, embedded in the SDK, and a check of a
+  payload against the schema of its type.
+- The services that read the platform back: the diary of the actual hours,
+  the digital working time status, the current workforce and the monthly
+  employment state.
+- A `DeclarationError`, which carries the type of the declaration that was
+  rejected, and `CodeOf` to read it.
+- Integration tests, which run against the trial environment when the
+  credentials are in the environment and are skipped otherwise.
+
+### Changed
+
+- **Breaking** The legacy E8 overtime declaration is removed. The API
+  rejects its payload on both the trial and the production environment, and
+  the action code it used belongs to the first generation of the platform.
+  The overtime of a branch is declared with the working time declaration.
+- The declarations of the employment lifecycle are a list, because the
+  schemas of the API declare the inner element with `maxOccurs="unbounded"`.
+- The optional booleans of the employment lifecycle are a pointer, because
+  the API leaves them empty when they are not answered.
+
+### Fixed
+
+- The values of the numbers of the employment lifecycle follow the format of
+  the API: the thousands are separated by a dot, the decimals by a comma, and
+  the hours carry a single decimal.
+
 ## [0.2.0] - 2026-10-21
 
 The release that makes the SDK usable, and that corrects the payloads it
@@ -141,6 +190,7 @@ declaration type with the reference payloads the Ministry publishes.
 The import path changed as well: the package is `github.com/takispanag/ergani-go-sdk`
 and the subdirectory `ergani/` is gone.
 
-[Unreleased]: https://github.com/takispanag/ergani-go-sdk/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/takispanag/ergani-go-sdk/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/takispanag/ergani-go-sdk/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/takispanag/ergani-go-sdk/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/takispanag/ergani-go-sdk/releases/tag/v0.1.0

@@ -5,56 +5,44 @@ The work that is still ahead for `ergani-go-sdk`. The items are tracked as
 progress of each one is visible.
 
 The platform exposes about fifty declaration types. The SDK models the card
-sector, which is where the traffic is, and submits the rest through the
-generic path. The work below fills the gap.
+sector and the lifecycle of the employment, and submits the rest through the
+generic path.
 
-## The lifecycle of the employment
+## The declarations that are not modelled yet
 
-- **Hiring (`WebE3N`)** with the shared core of the family: the identity of
-  the employee, the insurance funds, the working time, the place of work and
-  the attachments. The reference payload of the Ministry has ninety fields.
-- **The change of the employment (`WebMA`)** and its variant for borrowed
-  staff (`WebMAD`), with the code of the reason of the change.
-- **The end of the employment**, the fourteen variants of the digital
-  termination announcement: the voluntary resignation, the dismissal with and
-  without notice, the retirement, the end of a fixed term contract, the
-  transfer and the loan-out. They share one payload and a small
-  discriminator, so one type and one enum cover all of them.
-- **The special categories**: the construction workers, the internships, the
-  beneficiaries of the public benefit programmes and the theoretical training.
-
-## The working time organisation
-
-- The retrospective variants of the daily schedule (`WTODailyA`) and of the
-  overtime (`WTOOvA`), and the variants for the drivers (`WTODailyD`,
-  `WTOOvD`). They share the payload of the forms that are already modelled.
-- The change of the employment relationship for the working time
-  (`WKChgWK`), the vehicle of the census of 2022.
-- The exemption from the duty of advance notification (`ExProan`), which the
-  branches of the card regime file every month.
-- The declaration of the employment on the sixth day (`SixthDay`).
+- The special categories: the construction workers (`WebE12`, `WebE12Ap`),
+  the internships (`WebE35`), the beneficiaries of the public benefit
+  programmes (`WebE31`) and the theoretical training (`WebE32`). Their
+  payloads are small, and the schemas of the Ministry describe them.
+- The change of the employment (`WebMA`, `WebMAD`), which shares its core
+  with the hiring declaration and adds the reason of the change and the
+  types of the change.
+- The remaining working time variants: the retrospective daily schedule
+  (`WTODailyA`) and the one of the drivers (`WTODailyD`), the retrospective
+  overtime (`WTOOvA`) and the one of the drivers (`WTOOvD`).
 
 ## Reading the platform back
 
-- The monthly employment state (`EX_BASE_04`), the payload the labour
-  inspector sees. It holds the counters of every kind of leave, of the
-  overtime and of the work card, and it is what a declaration has to be
-  reconciled against.
-- The real working diary (`EX_BASE_07`) and the digital working time status
-  (`EX_BASE_08`), which say what the platform recorded against what was
-  declared.
+- A typed model of the monthly employment state (`EX_BASE_04`), the payload
+  with the counters of every kind of leave, of the overtime and of the work
+  card. It is what the labour inspector sees, and it is what a declaration
+  has to be reconciled against.
+- The employer and the branch master data (`EX_BASE_01`, `EX_BASE_02`), with
+  a typed model rather than the raw payload.
 - The acceptance status of the essential terms (`EX_BASE_06`).
 
 ## The tooling
 
-- A command line tool that submits a declaration from a file and validates it
-  against the schema of the API, next to the example under `cmd/`.
-- A pre-flight validator, which checks a declaration against the declared
-  schedule before it is sent: every card stamp paired, the overtime inside
-  the legal cap, the leave days reconciled with the monthly state. The API
-  offers no such check, and it is what the inspections look for.
-- The XSD schemas of the Ministry embedded in the repository, so a payload
-  can be validated against the schema of the API without a network call.
+- A command line tool that submits a declaration from a file and validates
+  it against the schema of the API, next to the example under `cmd/`.
+- A validator that checks a declaration against the schedule that was
+  declared before: every card stamp paired, the overtime inside the legal
+  cap of the working pattern, the leave days reconciled with the monthly
+  state. The API offers no such check, and it is what the inspections look
+  for.
+- A generator that keeps the models of the declarations in step with the
+  schemas, so that a new field of the API is a change of one table rather
+  than of a hundred lines.
 
 ## The stability of the API
 
