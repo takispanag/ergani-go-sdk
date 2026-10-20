@@ -5,29 +5,34 @@
 [![golangci-lint](https://img.shields.io/badge/golangci--lint-latest-green.svg)](https://golangci-lint.run/)
 [![License: MIT](https://img.shields.io/github/license/takispanag/ergani-go-sdk)](https://opensource.org/licenses/MIT)
 
-`ergani-go-sdk` is a Go SDK for interacting with the API of [Ergani](https://www.gov.gr/en/ipiresies/ergasia-kai-asphalise/apozemioseis-kai-parokhes/prosopopoiemene-plerophorese-misthotou-ergane),
-the Greek Ministry of Labour's platform for declaring employee movements,
-overtime and working schedules.
+`ergani-go-sdk` is a Go client for the API of [Ergani](https://www.gov.gr/en/ipiresies/ergasia-kai-asphalise/apozemioseis-kai-parokhes/prosopopoiemene-plerophorese-misthotou-ergani),
+the platform of the Greek Ministry of Labour where employers declare the
+movements, the overtime and the working time of their employees.
 
-It is meant for Greek employers who need to submit those declarations
+It is meant for the Greek employers that have to file those declarations
 programmatically instead of filling in the web form by hand. The package has
 no third-party dependencies: it only uses the Go standard library, so it drops
 into an existing service without pulling anything else in.
 
 ## Features
 
-- Submit work cards (arrival and departure declarations)
-- Submit overtime declarations
-- Submit daily work schedules
-- Submit weekly work schedules
-- Typed errors, so a rejected payload can be told apart from an expired token
-- Automatic re-authentication when the access token expires
-- Retries with exponential backoff for transient API failures
-- A `HTTPClient` hook, so the client can be tested without touching the network
+- The digital work card: the arrival and the departure of the employees.
+- The working time organisation: the daily schedule, the weekly schedule, the
+  overtime and the leaves.
+- Discovery: the declaration types the connected employer may submit, and the
+  schema of each of them.
+- The lifecycle of the credentials: authentication, renewal of the access
+  token, and revocation of the refresh token.
+- The recall of a submitted declaration, and its retrieval as a PDF.
+- The interoperability services, which read the master data of the employer,
+  of the branches and of the employees.
+- Typed errors, so a rejected payload can be told apart from an expired token.
+- Automatic renewal of the access token, and retries with an exponential
+  backoff for the transient failures.
 
 ## Requirements
 
-Go 1.19 or later.
+Go 1.21 or later. No third-party runtime dependencies.
 
 ## Installation
 
@@ -35,340 +40,497 @@ Go 1.19 or later.
 go get github.com/takispanag/ergani-go-sdk
 ```
 
-## Usage
-
-### Create a client
-
-To create a new Ergani client you have to set your Ergani username, password
-and optionally the Ergani API base URL, which defaults to
-`https://trialeservices.yeka.gr/WebServicesAPI/api`.
-
-```go
-package main
-
-import (
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
-
-func main() {
-	config := ergani.Config{
-		Username: os.Getenv("ERGANI_USERNAME"),
-		Password: os.Getenv("ERGANI_PASSWORD"),
-		BaseURL:  os.Getenv("ERGANI_BASE_URL"), // Optional, defaults to the trial URL
-		Timeout:  30 * time.Second,             // Optional, defaults to 30 seconds
-	}
-
-	client, err := ergani.NewClientWithConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	_ = client
-	fmt.Println("client ready")
-}
-```
-
-If you intend to use this package for multiple company entities, it is
-necessary to create separate client instances for each entity with the
-appropriate credentials.
-
-The shorter form uses the default base URL and timeout:
-
-```go
-package main
-
-import (
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
-
-func main() {
-	client, err := ergani.NewClient("username", "password")
-	if err != nil {
-		panic(err)
-	}
-
-	_ = client
-}
-```
-
-### Work card
-
-Submit work card records to Ergani in order to declare an employee's movement
-(arrival, departure).
-
-<!-- readme:skip -->
-```go
-func (c *Client) SubmitWorkCard(ctx context.Context, cards []CompanyWorkCard) ([]SubmissionResponse, error)
-```
-
-#### Example
+## Quick start
 
 ```go
 package main
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"os"
 	"time"
 
-	"github.com/takispanag/ergani-go-sdk/ergani"
+	"github.com/takispanag/ergani-go-sdk"
 )
 
 func main() {
-	ctx := context.Background()
-
-	client, err := ergani.NewClient("username", "password")
+	client, err := ergani.New(
+		os.Getenv("ERGANI_USERNAME"),
+		os.Getenv("ERGANI_PASSWORD"),
+	)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+
+	now := time.Now()
+
+	submissions, err := client.SubmitWorkCards(context.Background(), []ergani.WorkCardDeclaration{
+		{
+			EmployerTaxID: "094187530",
+			BranchNumber:  "0",
+			Cards: []ergani.WorkCard{
+				{
+					EmployeeTaxID:     "028233026",
+					EmployeeFirstName: "John",
+					EmployeeLastName:  "Doe",
+					MovementType:      ergani.MovementArrival,
+					ReferenceDate:     now,
+					MovementDateTime:  now,
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, submission := range submissions {
+		log.Printf("submitted %s with protocol %s", submission.ID, submission.Protocol)
+	}
+}
+```
+
+## Usage
+
+### The client
+
+```go
+package main
+
+import (
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password",
+		// The declarations have legal consequences, so the trial environment
+		// is the default. The production environment has to be asked for.
+		ergani.WithBaseURL(ergani.ProductionBaseURL),
+		ergani.WithTimeout(15*time.Second),
+		ergani.WithMaxRetries(3),
+		ergani.WithRetryBackoff(time.Second),
+		ergani.WithUserType(ergani.UserTypeErgani),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_ = client
+}
+```
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `WithBaseURL` | `TrialBaseURL` | The base URL of the API. |
+| `WithHTTPClient` | a client with `WithTimeout` | The HTTP client of every request. |
+| `WithTimeout` | `DefaultTimeout` (30s) | The timeout of the HTTP client the SDK creates. |
+| `WithMaxRetries` | `DefaultMaxRetries` (2) | The retries after the initial attempt. Zero disables them. |
+| `WithRetryBackoff` | `DefaultRetryBackoff` (500ms) | The base delay between two retries. |
+| `WithUserAgent` | the SDK and its version | The User-Agent header. |
+| `WithUserType` | `UserTypeErgani` | The kind of account the credentials belong to. |
+| `WithLogger` | a logger that discards | The logger that reports the requests. |
+
+### The environments
+
+| Environment | Base URL |
+| --- | --- |
+| Trial | `ergani.TrialBaseURL` |
+| Production | `ergani.ProductionBaseURL` |
+
+The client talks to the trial environment by default, because a mistake
+against the production environment has legal consequences. The declarations
+submitted to the trial environment carry the mark «ΑΚΥΡΟ» and have no legal
+effect.
+
+### Work cards
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	now := time.Now()
 	yesterday := now.AddDate(0, 0, -1)
 
-	workCard1 := ergani.WorkCard{
-		EmployeeTaxID:            "123456789",
-		EmployeeFirstName:        "John",
-		EmployeeLastName:         "Doe",
-		WorkCardMovementType:     ergani.Arrival,
-		WorkCardSubmissionDate:   ergani.Date{Time: yesterday},
-		WorkCardMovementDateTime: ergani.DateTime{Time: yesterday},
-	}
-
-	workCard2 := workCard1
-	workCard2.WorkCardMovementType = ergani.Departure
-	workCard2.WorkCardMovementDateTime = ergani.DateTime{Time: now}
-
-	companyWorkCard := ergani.CompanyWorkCard{
-		EmployerTaxID:        "999999999",
-		BusinessBranchNumber: 1,
-		CardDetails:          []ergani.WorkCard{workCard1, workCard2},
-	}
-
-	responses, err := client.SubmitWorkCard(ctx, []ergani.CompanyWorkCard{companyWorkCard})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, response := range responses {
-		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
-	}
-}
-```
-
-**Note**: You can submit work cards for various employees across multiple
-company branches simultaneously as shown above.
-
-### Overtime
-
-Submit overtime records to Ergani in order to declare employee overtimes.
-
-<!-- readme:skip -->
-```go
-func (c *Client) SubmitOvertime(ctx context.Context, overtimes []CompanyOvertime) ([]SubmissionResponse, error)
-```
-
-#### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
-
-func main() {
-	ctx := context.Background()
-
-	client, err := ergani.NewClient("username", "password")
-	if err != nil {
-		panic(err)
-	}
-
-	overtimeDate := time.Date(2025, 7, 10, 0, 0, 0, 0, time.UTC)
-	start := time.Date(2025, 7, 10, 18, 0, 0, 0, time.UTC)
-	end := time.Date(2025, 7, 10, 20, 0, 0, 0, time.UTC)
-
-	overtime := ergani.Overtime{
-		EmployeeTaxID:          "123456789",
-		EmployeeSSN:            "987654321",
-		EmployeeFirstName:      "John",
-		EmployeeLastName:       "Doe",
-		OvertimeDate:           ergani.Date{Time: overtimeDate},
-		OvertimeStartTime:      ergani.Time{Time: start},
-		OvertimeEndTime:        ergani.Time{Time: end},
-		OvertimeCancellation:   false,
-		EmployeeProfessionCode: "123456",
-		OvertimeJustification:  ergani.ExceptionalWorkload,
-		WeeklyWorkdaysNumber:   5,
-	}
-
-	companyOvertime := ergani.CompanyOvertime{
-		BusinessBranchNumber: 1,
-		SEPEServiceCode:      "12345",
-		PrimaryActivityCode:  "1234",
-		BranchActivityCode:   "1234",
-		KallikratisCode:      "12345678",
-		LegalRepTaxID:        "999999999",
-		EmployeeOvertimes:    []ergani.Overtime{overtime},
-	}
-
-	responses, err := client.SubmitOvertime(ctx, []ergani.CompanyOvertime{companyOvertime})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, response := range responses {
-		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
-	}
-}
-```
-
-### Daily schedule
-
-Submit daily schedules to Ergani in order to declare schedules for employees
-that don't have a fixed schedule (e.g. shift workers).
-
-<!-- readme:skip -->
-```go
-func (c *Client) SubmitDailySchedule(ctx context.Context, schedules []CompanyDailySchedule) ([]SubmissionResponse, error)
-```
-
-#### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
-
-func main() {
-	ctx := context.Background()
-
-	client, err := ergani.NewClient("username", "password")
-	if err != nil {
-		panic(err)
-	}
-
-	scheduleDate := time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC)
-	start := time.Date(2025, 7, 11, 9, 0, 0, 0, time.UTC)
-	end := time.Date(2025, 7, 11, 17, 0, 0, 0, time.UTC)
-
-	workdayDetails := ergani.WorkdayDetails{
-		WorkType:  ergani.WorkFromOffice,
-		StartTime: ergani.Time{Time: start},
-		EndTime:   ergani.Time{Time: end},
-	}
-
-	employeeSchedule := ergani.EmployeeDailySchedule{
-		EmployeeTaxID:     "123456789",
+	arrival := ergani.WorkCard{
+		EmployeeTaxID:     "028233026",
 		EmployeeFirstName: "John",
 		EmployeeLastName:  "Doe",
-		ScheduleDate:      ergani.Date{Time: scheduleDate},
-		WorkdayDetails:    []ergani.WorkdayDetails{workdayDetails},
+		MovementType:      ergani.MovementArrival,
+		ReferenceDate:     yesterday,
+		MovementDateTime:  yesterday,
 	}
 
-	companySchedule := ergani.CompanyDailySchedule{
-		BusinessBranchNumber: 1,
-		EmployeeSchedules:    []ergani.EmployeeDailySchedule{employeeSchedule},
-	}
+	departure := arrival
+	departure.MovementType = ergani.MovementDeparture
+	departure.MovementDateTime = now
 
-	responses, err := client.SubmitDailySchedule(ctx, []ergani.CompanyDailySchedule{companySchedule})
+	_, err = client.SubmitWorkCards(context.Background(), []ergani.WorkCardDeclaration{
+		{
+			EmployerTaxID: "094187530",
+			BranchNumber:  "0",
+			Comments:      "Daily declaration",
+			Cards:         []ergani.WorkCard{arrival, departure},
+		},
+	})
 	if err != nil {
-		panic(err)
-	}
-
-	for _, response := range responses {
-		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
+		log.Fatal(err)
 	}
 }
 ```
 
-### Weekly schedule
+A declaration groups the movements of one business branch of one employer.
+Several branches can be submitted in one call.
 
-Submit weekly schedules to Ergani in order to declare the working pattern of
-an employee for every day of a week.
-
-<!-- readme:skip -->
-```go
-func (c *Client) SubmitWeeklySchedule(ctx context.Context, schedules []CompanyWeeklySchedule) ([]SubmissionResponse, error)
-```
-
-#### Example
+### The working time organisation
 
 ```go
 package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
-	"github.com/takispanag/ergani-go-sdk/ergani"
+	"github.com/takispanag/ergani-go-sdk"
 )
 
 func main() {
-	ctx := context.Background()
-
-	client, err := ergani.NewClient("username", "password")
+	client, err := ergani.New("username", "password")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	weekStart := time.Date(2025, 7, 7, 0, 0, 0, 0, time.UTC)
-	weekEnd := time.Date(2025, 7, 13, 0, 0, 0, 0, time.UTC)
-	start := time.Date(2025, 7, 7, 9, 0, 0, 0, time.UTC)
-	end := time.Date(2025, 7, 7, 17, 0, 0, 0, time.UTC)
+	day := time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC)
 
-	workdayDetails := ergani.WorkdayDetails{
-		WorkType:  ergani.WorkFromOffice,
-		StartTime: ergani.Time{Time: start},
-		EndTime:   ergani.Time{Time: end},
-	}
-
-	employeeSchedule := ergani.EmployeeWeeklySchedule{
-		EmployeeTaxID:     "123456789",
-		EmployeeFirstName: "John",
-		EmployeeLastName:  "Doe",
-		ScheduleDay:       ergani.Weekday{Weekday: time.Monday},
-		WorkdayDetails:    []ergani.WorkdayDetails{workdayDetails},
-	}
-
-	companySchedule := ergani.CompanyWeeklySchedule{
-		BusinessBranchNumber: 1,
-		StartDate:            ergani.Date{Time: weekStart},
-		EndDate:              ergani.Date{Time: weekEnd},
-		EmployeeSchedules:    []ergani.EmployeeWeeklySchedule{employeeSchedule},
-	}
-
-	responses, err := client.SubmitWeeklySchedule(ctx, []ergani.CompanyWeeklySchedule{companySchedule})
+	_, err = client.SubmitDailySchedules(context.Background(), []ergani.DailyScheduleDeclaration{
+		{
+			BranchNumber: "0",
+			Schedules: []ergani.EmployeeDailySchedule{
+				{
+					EmployeeTaxID:     "028233026",
+					EmployeeFirstName: "John",
+					EmployeeLastName:  "Doe",
+					Date:              day,
+					Workday: []ergani.Workday{
+						{
+							WorkType:  ergani.WorkTypeOffice,
+							StartTime: day.Add(9 * time.Hour),
+							EndTime:   day.Add(18 * time.Hour),
+						},
+					},
+				},
+			},
+		},
+	})
 	if err != nil {
-		panic(err)
-	}
-
-	for _, response := range responses {
-		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
+		log.Fatal(err)
 	}
 }
 ```
+
+The weekly schedule is the same, with `SubmitWeeklySchedules` and a
+`time.Weekday` instead of a date.
+
+The overtime of a branch is declared as a working time, with the type
+`ergani.WorkTypeOvertime`:
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	day := time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC)
+
+	_, err = client.SubmitOvertimeSchedules(context.Background(), []ergani.OvertimeScheduleDeclaration{
+		{
+			BranchNumber: "0",
+			StartDate:    day,
+			EndDate:      day,
+			Schedules: []ergani.EmployeeOvertimeSchedule{
+				{
+					EmployeeTaxID:     "028233026",
+					EmployeeFirstName: "John",
+					EmployeeLastName:  "Doe",
+					Date:              day,
+					Workday: []ergani.Workday{
+						{
+							WorkType:  ergani.WorkTypeOvertime,
+							StartTime: day.Add(18 * time.Hour),
+							EndTime:   day.Add(21 * time.Hour),
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+### The leaves
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	day := time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC)
+
+	_, err = client.SubmitLeaves(context.Background(), []ergani.LeaveDeclaration{
+		{
+			BranchNumber: "0",
+			StartDate:    day,
+			EndDate:      day,
+			Schedules: []ergani.EmployeeLeave{
+				{
+					EmployeeTaxID:     "028233026",
+					EmployeeFirstName: "John",
+					EmployeeLastName:  "Doe",
+					Date:              day,
+					LeaveType:         ergani.LeaveRegular,
+					EntitledDays:      16,
+					Year:              2025,
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+### The other declaration types
+
+The start and the end of an employment, and the changes of its details, are
+declared with the digital notifications of Ergani II. They share a large
+common part, and the SDK does not model them yet. They are submitted with
+[Client.Submit], and the schema of each of them is available from
+[Client.DocumentSchema].
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// The schema of the declaration type, as the API describes it.
+	schema, err := client.DocumentSchema(context.Background(), ergani.CodeHire)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var shape map[string]any
+	if err := json.Unmarshal(schema, &shape); err != nil {
+		log.Fatal(err)
+	}
+
+	// The declaration is sent as it is.
+	payload := map[string]any{
+		"AnaggeliesE3N": map[string]any{
+			"AnaggeliaE3N": []any{},
+		},
+	}
+
+	if _, err := client.Submit(context.Background(), ergani.CodeHire, payload); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+### Discovery
+
+The API decides which declaration types the connected employer may submit,
+and it adds them over time. The SDK does not hard-code that list, it asks for
+it.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	types, err := client.ListSubmissions(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, declarationType := range types {
+		log.Printf("%s (%s): %s", declarationType.Code, declarationType.DocumentID(), declarationType.Description)
+	}
+}
+```
+
+### The interoperability services
+
+The services read the master data of the employer, of its branches and of its
+employees.
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result, err := client.ExecuteService(context.Background(), ergani.ServiceRequest{
+		ServiceCode: "EX_BASE_01",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(result, &decoded); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println(decoded)
+}
+```
+
+The catalogues of the codes the API accepts, such as the working time types
+and the justifications, are published as a service as well. They are the
+authoritative source of the code tables.
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	catalogue, err := client.CodeList(context.Background(), "WorkTimeType")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println(string(catalogue))
+}
+```
+
+### The recall of a declaration
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk"
+)
+
+func main() {
+	client, err := ergani.New("username", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.CancelDocument(context.Background(), ergani.CancelRequest{
+		TypeOfDocument: "00009",
+		Protocol:       "ΕΥΣ92",
+		SubmittedDate:  time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+The identifier of the declaration type is the one
+[SubmissionType.DocumentID] reports, or the code of the type. The API
+supports the recall for the leave declarations.
 
 ### Error handling
 
-Every failure of the API is reported as an `*ergani.APIError`, which carries the
-HTTP status code and the message returned by the service. A rejected token or
-a rejected set of credentials additionally matches `ergani.ErrUnauthorized`.
+Every failure of the API is reported as an `*ergani.APIError`, which carries
+the HTTP status code and the message of the service. A rejected token or a
+rejected set of credentials additionally matches `ergani.ErrUnauthorized`.
 
 ```go
 package main
@@ -376,95 +538,208 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 
-	"github.com/takispanag/ergani-go-sdk/ergani"
+	"github.com/takispanag/ergani-go-sdk"
 )
 
 func main() {
-	ctx := context.Background()
-
-	client, err := ergani.NewClient("username", "password")
+	client, err := ergani.New("username", "password")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	_, err = client.SubmitWorkCard(ctx, nil)
+	_, err = client.SubmitWorkCards(context.Background(), nil)
+	if err == nil {
+		return
+	}
 
 	switch {
 	case errors.Is(err, ergani.ErrUnauthorized):
-		fmt.Println("the credentials or the access token were rejected")
-	case ergani.IsStatusCode(err, 400):
-		fmt.Println("the API rejected the payload")
-	case err != nil:
-		fmt.Println("unexpected error:", err)
+		log.Println("the credentials or the access token were rejected")
+	case errors.Is(err, ergani.ErrInvalidRequest):
+		log.Println("the API rejected the payload:", err)
+	case errors.Is(err, ergani.ErrRateLimited):
+		log.Println("the API asked to slow down:", err)
+	default:
+		log.Println("unexpected error:", err)
 	}
 }
 ```
+
+A declaration that the SDK rejects before it reaches the API carries a
+`*ergani.ValidationError`, which points at the offending field.
+
+| Sentinel | HTTP status | Meaning |
+| --- | --- | --- |
+| `ErrUnauthorized` | 401 | The credentials or the access token were rejected. |
+| `ErrInvalidRequest` | 400, 422 | The API rejected the payload. |
+| `ErrNotFound` | 404 | The API did not find the resource. |
+| `ErrRateLimited` | 429 | The API asked the client to slow down. |
+| `ErrServer` | 5xx | The API itself failed. |
 
 ### Retries and timeouts
 
-A request is retried when the API answers with `429` or with a `5xx` status, or
-when the connection fails. A `401` triggers a fresh authentication and a new
-attempt. The delay between two attempts grows exponentially and honours the
-`Retry-After` header.
+A request is retried when the API answers with `429` or with a `5xx` status,
+or when the connection fails. A `401` renews the access token and sends the
+request again. The delay between two attempts grows exponentially and honours
+the `Retry-After` header.
 
-```go
-package main
+**The submission endpoints are not idempotent.** A submission that the API
+accepted but whose response was lost may be sent again, and the API may
+record it twice. Set `WithMaxRetries(0)` when a duplicate is worse than a
+failure.
 
-import (
-	"time"
+## The declaration types
 
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
+| Type | Method | Code |
+| --- | --- | --- |
+| Work card | `SubmitWorkCards` | `WRKCardSE` |
+| Daily schedule | `SubmitDailySchedules` | `WTODaily` |
+| Weekly schedule | `SubmitWeeklySchedules` | `WTOWeek` |
+| Overtime schedule | `SubmitOvertimeSchedules` | `WTOOv` |
+| Leave | `SubmitLeaves` | `WTOLeave` |
+| E8 overtime | `SubmitOvertime` | `OvTime` |
+| Hire | `Submit` | `WebE3N` |
+| Resignation | `Submit` | `WebE5N` |
+| Dismissal | `Submit` | `WebE6NMP` |
+| End of a fixed term contract | `Submit` | `WebE7N` |
+| Change of the employment | `Submit` | `WebMA` |
 
-func main() {
-	client, err := ergani.NewClientWithConfig(ergani.Config{
-		Username:     "username",
-		Password:     "password",
-		Timeout:      30 * time.Second,
-		MaxRetries:   3,           // Zero means ergani.DefaultMaxRetries
-		RetryBackoff: time.Second, // Zero means ergani.DefaultRetryBackoff
-		UserAgent:    "my-app/1.0",
-	})
-	if err != nil {
-		panic(err)
-	}
+The package holds the codes of the other types as constants, such as
+`ergani.CodeScheduleDailyA` and `ergani.CodeProbationTermination`.
 
-	_ = client
-}
-```
+The E8 overtime form was replaced by the working time overtime declarations,
+and the API rejects its payload. `SubmitOvertime` is kept because the form is
+part of the official sample archive, but `SubmitOvertimeSchedules` is the way
+to declare overtime.
 
-### Testing against the SDK
+## Glossary
 
-The client accepts any `HTTPClient`, which makes it easy to test the code that
-submits declarations without reaching the real API.
+The field names below are the ones the API uses. The glossary mirrors the
+official documentation of the interoperability guide of the Ministry.
 
-```go
-package main
+### Work card
 
-import (
-	"fmt"
-	"net/http"
-	"time"
+| **Original** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `f_afm_ergodoti` | Α.Φ.Μ Εργοδότη (Για Επαλήθευση) | `employer_tax_identification_number` |
+| `f_aa` | Α/Α Παραρτήματος | `business_branch_number` |
+| `f_comments` | ΣΧΟΛΙΑ | `comments` |
+| `f_afm` | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
+| `f_eponymo` | ΕΠΩΝΥΜΟ | `employee_last_name` |
+| `f_onoma` | ΟΝΟΜΑ | `employee_first_name` |
+| `f_type` | Τύπος Κίνησης | `work_card_movement_type` |
+| `f_reference_date` | ΗΜ/ΝΙΑ Αναφοράς | `work_card_submission_date` |
+| `f_date` | ΗΜ/ΝΙΑ Κίνησης | `work_card_movement_datetime` |
+| `f_aitiologia` | ΚΩΔΙΚΟΣ ΑΙΤΙΟΛΟΓΙΑΣ (Σε περίπτωση Εκπρόθεσμου) | `late_declaration_justification` |
 
-	"github.com/takispanag/ergani-go-sdk/ergani"
-)
+#### Work card movement types
 
-func main() {
-	client, err := ergani.NewClientWithConfig(ergani.Config{
-		Username:   "username",
-		Password:   "password",
-		HTTPClient: &http.Client{Timeout: 5 * time.Second},
-	})
-	if err != nil {
-		panic(err)
-	}
+| **Original API code** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `0` | ΠΡΟΣΕΛΕΥΣΗ | `ARRIVAL` |
+| `1` | ΑΠΟΧΩΡΗΣΗ | `DEPARTURE` |
 
-	_ = client
-	fmt.Println("client ready")
-}
-```
+#### Work card justifications
+
+| **Original API code** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `001` | ΠΡΟΒΛΗΜΑ ΣΤΑ ΣΥΣΤΗΜΑΤΑ ΤΟΥ ΕΡΓΟΔΟΤΗ | `EMPLOYER_SYSTEMS_UNAVAILABLE` |
+| `002` | ΠΡΟΒΛΗΜΑ ΣΤΟΝ ΗΛΕΚΤΡΟΛΟΓΙΚΟ ΥΠΟΣΤΑΘΜΟ | `POWER_OUTAGE` |
+| `003` | ΠΡΟΒΛΗΜΑ ΣΤΑ ΣΥΣΤΗΜΑΤΑ ΤΟΥ ΠΣ ΕΡΓΑΝΗ | `ERGANI_SYSTEMS_UNAVAILABLE` |
+
+### Overtime
+
+| **Original** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `f_aa_pararthmatos` | Α/Α Παραρτήματος | `business_branch_number` |
+| `f_rel_protocol` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ. | `related_protocol_id` |
+| `f_rel_date` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ | `related_protocol_date` |
+| `f_ypiresia_sepe` | ΚΩΔΙΚΟΣ ΥΠΗΡΕΣΙΑΣ ΕΠΙΘΕΩΡΗΣΗΣ ΕΡΓΑΣΙΑΣ | `sepe_service_code` |
+| `f_ergodotikh_organwsh` | ΕΡΓΟΔΟΤΙΚΗ ΟΡΓΑΝΩΣΗ | `employer_organization` |
+| `f_kad_kyria` | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ | `business_primary_activity_code` |
+| `f_kad_deyt_1` | Κ.Α.Δ. - ΔΕΥΤΕΡΕΥΟΝΤΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ 1 | `business_secondary_activity_code_1` |
+| `f_kad_deyt_2` | Κ.Α.Δ. - ΔΕΥΤΕΡΕΥΟΝΤΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ 2 | `business_secondary_activity_code_2` |
+| `f_kad_deyt_3` | Κ.Α.Δ. - ΔΕΥΤΕΡΕΥΟΝΤΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ 3 | `business_secondary_activity_code_3` |
+| `f_kad_deyt_4` | Κ.Α.Δ. - ΔΕΥΤΕΡΕΥΟΝΤΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ 4 | `business_secondary_activity_code_4` |
+| `f_kad_pararthmatos` | Κ.Α.Δ. ΠΑΡΑΡΤΗΜΑΤΟΣ | `business_brach_activity_code` |
+| `f_kallikratis_pararthmatos` | ΔΗΜΟΤΙΚΗ / ΤΟΠΙΚΗ ΚΟΙΝΟΤΗΤΑ | `kallikratis_municipal_code` |
+| `f_comments` | ΣΧΟΛΙΑ | `comments` |
+| `f_afm_proswpoy` | Νόμιμος Εκπρόσωπος(Α.Φ.Μ.) | `legal_representative_tax_identification_number` |
+| `f_afm` | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
+| `f_amka` | ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΚΟΙΝΩΝΙΚΗΣ ΑΣΦΑΛΙΣΗΣ (Α.Μ.Κ.Α.) | `employee_social_security_number` |
+| `f_eponymo` | ΕΠΩΝΥΜΟ | `employee_last_name` |
+| `f_onoma` | ΟΝΟΜΑ | `employee_first_name` |
+| `f_date` | ΗΜΕΡΟΜΗΝΙΑ ΥΠΕΡΩΡΙΑΣ | `overtime_date` |
+| `f_from` | ΩΡΑ ΕΝΑΡΞΗΣ ΥΠΕΡΩΡΙΑΣ (HH24:MM) | `overtime_start_time` |
+| `f_to` | ΩΡΑ ΛΗΞΗΣ ΥΠΕΡΩΡΙΑΣ (HH24:MM) | `overtime_end_time` |
+| `f_cancellation` | ΑΚΥΡΩΣΗ ΥΠΕΡΩΡΙΑΣ | `overtime_cancellation` |
+| `f_step` | ΕΙΔΙΚΟΤΗΤΑ ΚΩΔΙΚΟΣ | `employee_profession_code` |
+| `f_reason` | ΑΙΤΙΟΛΟΓΙΑ ΚΩΔΙΚΟΣ | `overtime_justification` |
+| `f_weekdates` | ΕΒΔΟΜΑΔΙΑΙΑ ΑΠΑΣΧΟΛΗΣΗ (5) ΠΕΝΘΗΜΕΡΟ (6) ΕΞΑΜΕΡΟ | `weekly_workdays_number` |
+| `f_asee` | ΕΓΚΡΙΣΗ ΑΣΕΕ | `asee_approval` |
+
+#### Overtime justfications
+
+| **Original API code** | **Original help text** (in Greek) | Translation |
+| --- | --- | --- |
+| `001` | ΠΡΟΛΗΨΗ ΑΤΥΧΗΜΑΤΩΝ Ή ΔΙΑΡΘΩΣΗ ΖΗΜΙΩΝ | `ACCIDENT_PREVENTION_OR_DAMAGE_RESTORATION` |
+| `002` | ΕΠΕΙΓΟΥΣΕΣ ΕΡΓΑΣΙΕΣ ΕΠΟΧΙΑΚΟΥ ΧΑΡΑΚΤΗΡΑ | `URGENT_SEASONAL_TASKS` |
+| `003` | ΕΞΑΙΡΕΤΙΚΑ ΕΡΓΑΣΙΑΣ – ΦΟΡΤΟΣ ΕΡΓΑΣΙΑΣ | `EXCEPTIONAL_WORKLOAD` |
+| `004` | ΠΡΟΕΚΤΑΜΙΝΕΣ Ή ΣΥΜΠΛΗΡΩΜΑΤΙΚΕΣ ΕΡΓΑΣΙΕΣ | `SUPPLEMENTARY_TASKS` |
+| `005` | ΑΝΑΠΛΗΡΩΣΗ ΜΑΘΗΜΑΤΩΝ ΛΟΓΩ ΑΠΡΟΟΠΤΙΚΩΝ ΑΙΤΙΩΝ Ή ΥΠΕΡΒΟΛΙΚΗΣ ΒΙΑΣ | `LOST_HOURS_SUDDEN_CAUSES` |
+| `006` | ΑΝΑΠΛΗΡΩΣΗ ΜΑΘΗΜΑΤΩΝ ΛΟΓΩ ΕΠΙΣΗΜΩΝ ΑΡΓΙΩΝ | `LOST_HOURS_OFFICIAL_HOLIDAYS` |
+| `007` | ΑΝΑΠΛΗΡΩΣΗ ΜΑΘΗΜΑΤΩΝ ΛΟΓΩ ΚΑΙΡΙΚΩΝ ΣΥΝΘΗΚΩΝ | `LOST_HOURS_WEATHER_CONDITIONS` |
+| `008` | ΕΚΤΑΚΤΕΣ ΕΡΓΑΣΙΕΣ ΚΛΕΙΣΙΜΟΥ ΗΜΕΡΑ Ή ΜΗΝΑ | `EMERGENCY_CLOSURE_DAY` |
+| `009` | ΛΟΙΠΕΣ ΕΡΓΑΣΙΕΣ ΟΙ ΟΠΟΙΕΣ ΔΕΝ ΜΠΟΡΟΥΝ ΝΑ ΠΡΑΓΜΑΤΟΠΟΙΗΘΟΥΝ ΚΑΤΑ ΤΙΣ ΣΥΝΗΘΙΣΜΕΝΕΣ ΩΡΕΣ ΕΡΓΑΣΙΑΣ | `NON_WORKDAY_TASKS` |
+
+### Daily schedule
+
+| **Original** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `f_aa_pararthmatos` | Α/Α Παραρτήματος | `business_branch_number` |
+| `f_rel_protocol` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ. | `related_protocol_id` |
+| `f_rel_date` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ | `related_protocol_date` |
+| `f_comments` | ΣΧΟΛΙΑ | `comments` |
+| `f_from_date` | ΗΜ/ΝΙΑ ΑΠΟ | `start_date` |
+| `f_to_date` | ΗΜ/ΝΙΑ ΕΩΣ | `end_date` |
+| `f_afm` | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
+| `f_eponymo` | ΕΠΩΝΥΜΟ | `employee_last_name` |
+| `f_onoma` | ΟΝΟΜΑ | `employee_first_name` |
+| `f_date` | ΗΜΕΡΟΜΗΝΙΑ | `schedule_date` |
+| `f_type` | ΤΥΠΟΣ ΑΝΑΛΥΤΙΚΗΣ ΕΓΓΡΑΦΗΣ - ΚΩΔΙΚΟΣ | `work_type` |
+| `f_from` | ΩΡΑ ΑΠΟ (HH24:MM) | `start_time` |
+| `f_to` | ΩΡΑ ΕΩΣ (HH24:MM) | `end_time` |
+
+### Weekly schedule
+
+| **Original** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `f_aa_pararthmatos` | Α/Α Παραρτήματος | `business_branch_number` |
+| `f_rel_protocol` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ. | `related_protocol_id` |
+| `f_rel_date` | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ | `related_protocol_date` |
+| `f_comments` | ΣΧΟΛΙΑ | `comments` |
+| `f_from_date` | ΗΜ/ΝΙΑ ΑΠΟ | `start_date` |
+| `f_to_date` | ΗΜ/ΝΙΑ ΕΩΣ | `end_date` |
+| `f_afm` | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
+| `f_eponymo` | ΕΠΩΝΥΜΟ | `employee_last_name` |
+| `f_onoma` | ΟΝΟΜΑ | `employee_first_name` |
+| `f_day` | ΗΜΕΡΑ (0) Κυριακή - (1) Δευτέρα - (2) Τρίτη - (3) Τετάρτη - (4) Πέμπτη - (5) Παρασκευή - (6) Σάββατο | `schedule_day` |
+| `f_type` | ΤΥΠΟΣ ΑΝΑΛΥΤΙΚΗΣ ΕΓΓΡΑΦΗΣ - ΚΩΔΙΚΟΣ | `work_type` |
+| `f_from` | ΩΡΑ ΑΠΟ (HH24:MM) | `start_time` |
+| `f_to` | ΩΡΑ ΕΩΣ (HH24:MM) | `end_time` |
+
+### Schedule work types
+
+| **Original API code** | **Original help text** (in Greek) | **Translated** |
+| --- | --- | --- |
+| `ΕΡΓ` | ΕΡΓΑΣΙΑ | `WORK_FROM_OFFICE` |
+| `ΤΗΛ` | ΤΗΛΕΡΓΑΣΙΑ | `WORK_FROM_HOME` |
+| `ΑΝ` | ΑΝΑΠΑΥΣΗ/ΡΕΠΟ | `REST_DAY` |
+| `ΜΕ` | ΜΗ ΕΡΓΑΣΙΑ | `NO_WORK` |
+| `ΥΠ` | ΥΠΕΡΩΡΙΑ | `OVERTIME` |
+| `ΧΥΠ` | ΧΩΡΙΣ ΥΠΕΡΩΡΙΑ | `NO_OVERTIME` |
 
 ## Development
 
@@ -478,136 +753,23 @@ make lint        # run golangci-lint, skipped when it is not installed
 make check       # everything the CI runs
 ```
 
-`make check` also compiles every Go example of this file, so the documentation
-cannot drift away from the code.
+The payload of every declaration type is compared with the reference payloads
+the Ministry publishes, in `testdata/official`, so a change of the wire
+format shows up in the diff of a pull request. The examples of this file are
+compiled by the CI as well, so the documentation cannot drift away from the
+code.
 
 The roadmap of the work still ahead lives in [ROADMAP.md](ROADMAP.md).
 
-## Glossary
+## Compatibility
 
-The glossary might help you if you're taking a look at the official documentation of the Ergani
-API (https://eservices.yeka.gr/(S(ayldvlj35eukgvmzrr055oe5))/Announcements.aspx?id=257).
+The versions below `v1.0.0` carry no compatibility guarantee: a minor
+release may break the public API. The migration notes of every release are
+in the [CHANGELOG.md](CHANGELOG.md).
 
-### Work card
+## Contributing
 
-| **Original**       | **Original help text** (in Greek)              | **Translated**                        |
-|--------------------|------------------------------------------------|---------------------------------------|
-| `f_afm_ergodoti`   | Α.Φ.Μ Εργοδότη (Για επαλήθευση)                | `employer_tax_identification_number`  |
-| `f_aa`             | Α/Α Παραρτήματος                               | `business_branch_number`              |
-| `f_comments`       | ΣΧΟΛΙΑ                                         | `comments`                            |
-| `f_afm`            | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)           | `employee_tax_indentification_number` |
-| `f_eponymo`        | ΕΠΩΝΥΜΟ                                        | `employee_last_name`                  |
-| `f_onoma`          | ΟΝΟΜΑ                                          | `employee_first_name`                 |
-| `f_type`           | Τύπος Κίνησης                                  | `work_card_movement_type`             |
-| `f_reference_date` | ΗΜ/ΝΙΑ Αναφοράς                                | `work_card_submission_date`           |
-| `f_date`           | ΗΜ/ΝΙΑ Κίνησης                                 | `work_card_movement_datetime`         |
-| `f_aitiologia`     | ΚΩΔΙΚΟΣ ΑΙΤΙΟΛΟΓΙΑΣ (Σε περίπτωση Εκπρόθεσμου) | `late_declaration_justification`      |
-
-#### Work card movement types
-
-| **Original API code** | **Original help text** (in Greek) | **Translated** |
-|-----------------------|-----------------------------------|----------------|
-| `0`                   | ΠΡΟΣΕΛΕΥΣΗ                        | `ARRIVAL`      |
-| `1`                   | ΑΠΟΧΩΡΗΣΗ                         | `DEPARTURE`    |
-
-#### Work card justifications
-
-| **Original API code** | **Original help text** (in Greek)           | **Translated**                 |
-|-----------------------|---------------------------------------------|--------------------------------|
-| `001`                 | ΠΡΟΒΛΗΜΑ ΣΤΗΝ ΗΛΕΚΤΡΟΔΟΤΗΣΗ/ΤΗΛΕΠΙΚΟΙΝΩΝΙΕΣ | `POWER_OUTAGE`                 |
-| `002`                 | ΠΡΟΒΛΗΜΑ ΣΤΑ ΣΥΣΤΗΜΑΤΑ ΤΟΥ ΕΡΓΟΔΟΤΗ         | `EMPLOYER_SYSTEMS_UNAVAILABLE` |
-| `003`                 | ΠΡΟΒΛΗΜΑ ΣΥΝΔΕΣΗΣ ΜΕ ΤΟ ΠΣ ΕΡΓΑΝΗ           | `ERGANI_SYSTEMS_UNAVAILABLE`   |
-
-### Overtime
-
-| **Original**                 | **Original help text** (in Greek)                 | **Translated**                                   |
-|------------------------------|---------------------------------------------------|--------------------------------------------------|
-| `f_aa`                       | Α/Α Παραρτήματος                                  | `business_branch_number`                         |
-| `f_rel_protocol`             | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ.	                       | `related_protocol_id`                            |
-| `f_rel_date`                 | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ	                        | `related_protocol_date`                          |
-| `f_ypiresia_sepe`            | ΚΩΔΙΚΟΣ ΥΠΗΡΕΣΙΑΣ ΣΕΠΕ	                           | `sepe_service_code`                              |
-| `f_ergodotikh_organwsh`      | ΕΡΓΟΔΟΤΙΚΗ ΟΡΓΑΝΩΣΗ	                              | `employer_organization`                          |
-| `f_kad_kyria`                | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ	                     | `business_primary_activity_code`                 |
-| `f_kad_deyt_1`               | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ	1                    | `business_secondary_activity_code_1`             |
-| `f_kad_deyt_2`               | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ	2                    | `business_secondary_activity_code_2`             |
-| `f_kad_deyt_3`               | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ	3                    | `business_secondary_activity_code_3`             |
-| `f_kad_deyt_4`               | Κ.Α.Δ. - ΚΥΡΙΑ ΔΡΑΣΤΗΡΙΟΤΗΤΑ	4                    | `business_secondary_activity_code_4`             |
-| `f_kad_pararthmatos`         | Κ.Α.Δ. ΠΑΡΑΡΤΗΜΑΤΟΣ	                              | `business_brach_activity_code`                   |
-| `f_kallikratis_pararthmatos` | ΔΗΜΟΤΙΚΗ / ΤΟΠΙΚΗ ΚΟΙΝΟΤΗΤΑ	                      | `kallikratis_municipal_code`                     |
-| `f_comments`                 | ΠΑΡΑΤΗΡΗΣΕΙΣ                                      | `comments`                                       |
-| `f_afm_proswpoy`             | Νόμιμος Εκπρόσωπος(Α.Φ.Μ.)                        | `legal_representative_tax_identification_number` |
-| `f_afm`                      | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.)              | `employee_tax_indentification_number`            |
-| `f_amka`                     | ΑΡΙΘΜΟΣ ΜΗΤΡΩΟΥ ΚΟΙΝΩΝΙΚΗΣ ΑΣΦΑΛΙΣΗΣ (Α.Μ.Κ.Α.)   | `employee_social_security_number`                |
-| `f_eponymo`                  | ΕΠΩΝΥΜΟ                                           | `employee_last_name`                             |
-| `f_onoma`                    | ΟΝΟΜΑ                                             | `employee_first_name`                            |
-| `f_date`                     | ΗΜΕΡΟΜΗΝΙΑ ΥΠΕΡΩΡΙΑΣ	                             | `overtime_date`                                  |
-| `f_from`                     | ΩΡΑ ΕΝΑΡΞΗΣ ΥΠΕΡΩΡΙΑΣ (HH24:MM)	                  | `overtime_start_time`                            |
-| `f_to`                       | ΩΡΑ ΛΗΞΗΣ ΥΠΕΡΩΡΙΑΣ (HH24:MM)	                    | `overtime_end_time`                              |
-| `f_cancellation`             | ΑΚΥΡΩΣΗ ΥΠΕΡΩΡΙΑΣ	                                | `overtime_cancellation`                          |
-| `f_step`                     | ΕΙΔΙΚΟΤΗΤΑ ΚΩΔΙΚΟΣ	                               | `employee_profession_code`                       |
-| `f_reason`                   | ΑΙΤΙΟΛΟΓΙΑ ΚΩΔΙΚΟΣ	                               | `overtime_justification`                         |
-| `f_weekdates`                | ΕΒΔΟΜΑΔΙΑΙΑ ΑΠΑΣΧΟΛΗΣΗ (5) ΠΕΝΘΗΜΕΡΟ (6) ΕΞΑΗΜΕΡΟ | `weekly_workdays_number`                         |
-| `f_asee`                     | ΕΓΚΡΙΣΗ ΑΣΕΕ	                                     | `asee_approval`                                  |
-
-#### Overtime justfications
-
-| **Original API code** | **Original help text** (in Greek)                                                 | Translation                                 |
-|-----------------------|-----------------------------------------------------------------------------------|---------------------------------------------|
-| `001`                 | ΠΡΟΛΗΨΗ ΑΤΥΧΗΜΑΤΩΝ Η ΑΠΟΚΑΤΑΣΤΑΣΗ ΖΗΜΙΩΝ                                          | `ACCIDENT_PREVENTION_OR_DAMAGE_RESTORATION` |
-| `002`                 | ΕΠΕΙΓΟΥΣΕΣ ΕΡΓΑΣΙΕΣ ΕΠΟΧΙΑΚΟΥ ΧΑΡΑΚΤΗΡΑ                                           | `URGENT_SEASONAL_TASKS`                     |
-| `003`                 | ΕΞΑΙΡΕΤΙΚΗ ΣΩΡΕΥΣΗ ΕΡΓΑΣΙΑΣ – ΦΟΡΤΟΣ ΕΡΓΑΣΙΑΣ                                     | `EXCEPTIONAL_WORKLOAD`                      |
-| `004`                 | ΠΡΟΕΠΙΣΚΕΥΑΣΤΙΚΕΣ Η ΣΥΜΠΛΗΡΩΜΑΤΙΚΕΣ ΕΡΓΑΣΙΕΣ                                      | `SUPPLEMENTARY_TASKS`                       |
-| `005`                 | ΑΝΑΠΛΗΡΩΣΗ ΧΑΜΕΝΩΝ ΩΡΩΝ ΛΟΓΩ ΞΑΦΝΙΚΩΝ ΑΙΤΙΩΝ Η ΑΝΩΤΕΡΑΣ ΒΙΑΣ                      | `LOST_HOURS_SUDDEN_CAUSES`                  |
-| `006`                 | ΑΝΑΠΛΗΡΩΣΗ ΧΑΜΕΝΩΝ ΩΡΩΝ ΛΟΓΩ ΕΠΙΣΗΜΩΝ ΑΡΓΙΩΝ                                      | `LOST_HOURS_OFFICIAL_HOLIDAYS`              |
-| `007`                 | ΑΝΑΠΛΗΡΩΣΗ ΧΑΜΕΝΩΝ ΩΡΩΝ ΛΟΓΩ ΚΑΙΡΙΚΩΝ ΣΥΝΘΗΚΩΝ                                    | `LOST_HOURS_WEATHER_CONDITIONS`             |
-| `008`                 | ΈΚΤΑΚΤΕΣ ΕΡΓΑΣΙΕΣ ΚΛΕΙΣΙΜΑΤΟΣ ΗΜΕΡΑΣ Η ΜΗΝΑ                                       | `EMERGENCY_CLOSURE_DAY`                     |
-| `009`                 | ΛΟΙΠΕΣ ΕΡΓΑΣΙΕΣ ΟΙ ΟΠΟΙΕΣ ΔΕΝ ΜΠΟΡΟΥΝ ΝΑ ΠΡΑΓΜΑΤΟΠΟΙΗΘΟΥΝ ΚΑΤΑ ΤΙΣ ΕΡΓΑΣΙΜΕΣ ΩΡΕΣ | `NON_WORKDAY_TASKS`                         |
-
-### Daily schedule
-
-| **Original**        | **Original help text** (in Greek)    | **Translated**                        |
-|---------------------|--------------------------------------|---------------------------------------|
-| `f_aa_pararthmatos` | Α/Α ΠΑΡΑΡΤΗΜΑΤΟΣ                     | `business_branch_number`              |
-| `f_rel_protocol`    | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ.           | `related_protocol_id`                 |
-| `f_rel_date`        | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ            | `related_protocol_date`               |
-| `f_comments`        | ΠΑΡΑΤΗΡΗΣΕΙΣ                         | `comments`                            |
-| `f_from_date`       | ΗΜΕΡΟΜΗΝΙΑ ΑΠΟ                       | `start_date`                          |
-| `f_to_date`         | ΗΜΕΡΟΜΗΝΙΑ ΕΩΣ                       | `end_date`                            |
-| `f_afm`             | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
-| `f_eponymo`         | ΕΠΩΝΥΜΟ                              | `employee_last_name`                  |
-| `f_onoma`           | ΟΝΟΜΑ                                | `employee_first_name`                 |
-| `f_day`             | ΗΜΕΡΑ                                | `schedule_date`                       |
-| `f_type`            | ΤΥΠΟΣ ΑΝΑΛΥΤΙΚΗΣ ΕΓΓΡΑΦΗΣ - ΚΩΔΙΚΟΣ  | `work_type`                           |
-| `f_from`            | ΩΡΑ ΑΠΟ (HH24:MM)                    | `start_time`                          |
-| `f_to`              | ΩΡΑ ΕΩΣ (HH24:MM)                    | `end_time`                            |
-
-### Weekly schedule
-
-| **Original**        | **Original help text** (in Greek)    | **Translated**                        |
-|---------------------|--------------------------------------|---------------------------------------|
-| `f_aa_pararthmatos` | Α/Α ΠΑΡΑΡΤΗΜΑΤΟΣ                     | `business_brach_number`               |
-| `f_rel_protocol`    | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΑΡΙΘ. ΠΡΩΤ.           | `related_protocol_id`                 |
-| `f_rel_date`        | ΣΧΕΤΙΚΟ ΕΝΤΥΠΟ ΗΜΕΡΟΜΗΝΙΑ            | `related_protocol_date`               |
-| `f_comments`        | ΠΑΡΑΤΗΡΗΣΕΙΣ                         | `comments`                            |
-| `f_from_date`       | ΗΜΕΡΟΜΗΝΙΑ ΑΠΟ                       | `start_date`                          |
-| `f_to_date`         | ΗΜΕΡΟΜΗΝΙΑ ΕΩΣ                       | `end_date`                            |
-| `f_afm`             | ΑΡΙΘΜΟΣ ΦΟΡΟΛΟΓΙΚΟΥ ΜΗΤΡΩΟΥ (Α.Φ.Μ.) | `employee_tax_indentification_number` |
-| `f_eponymo`         | ΕΠΩΝΥΜΟ                              | `employee_last_name`                  |
-| `f_onoma`           | ΟΝΟΜΑ                                | `employee_first_name`                 |
-| `f_date`            | ΗΜΕΡΟΜΗΝΙΑ                           | `schedule_date`                       |
-| `f_type`            | ΤΥΠΟΣ ΑΝΑΛΥΤΙΚΗΣ ΕΓΓΡΑΦΗΣ - ΚΩΔΙΚΟΣ  | `work_type`                           |
-| `f_from`            | ΩΡΑ ΑΠΟ (HH24:MM)                    | `start_time`                          |
-| `f_to`              | ΩΡΑ ΕΩΣ (HH24:MM)                    | `end_time`                            |
-
-### Schedule work types
-
-| **Original API code** | **Original help text** (in Greek) | **Translated**     |
-|-----------------------|-----------------------------------|--------------------|
-| `ΜΕ`                  | ΜΗ ΕΡΓΑΣΙΑ                        | `ABSENT`           |
-| `ΑΝ`                  | ΑΝΑΠΑΥΣΗ/ΡΕΠΟ                     | `REST_DAY`         |
-| `ΤΗΛ`                 | ΤΗΛΕΡΓΑΣΙΑ                        | `WORK_FROM_HOME`   |
-| `ΕΡΓ`                 | ΕΡΓΑΣΙΑ                           | `WORK_FROM_OFFICE` |
-
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
