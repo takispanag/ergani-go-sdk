@@ -134,6 +134,11 @@ func main() {
 | `WithUserType` | `UserTypeErgani` | The kind of account the credentials belong to. |
 | `WithLogger` | a logger that discards | The logger that reports the requests. |
 
+The client authenticates on its own before the first call, and renews the
+access token when the API rejects it. `Client.Authenticate` returns the
+credentials of the session when they are wanted, and `Client.Logout` revokes
+the refresh token at the end of it.
+
 ### The environments
 
 | Environment | Base URL |
@@ -298,6 +303,13 @@ func main() {
 }
 ```
 
+Both forms have a variant of their own, and the variant selects the type of
+the declaration: `SubmitDailyScheduleVariant` and
+`SubmitOvertimeScheduleVariant` take one, such as `ergani.ScheduleOvertime`
+for the overtime itself, `ergani.ScheduleOvertimeRetrospective` for the one
+declared after the day it belongs to, and `ergani.ScheduleDailyDrivers` for
+the drivers.
+
 ### The leaves
 
 ```go
@@ -391,9 +403,16 @@ API, and the enumerated fields are typed.
 
 ### The other declaration types
 
-The declarations the SDK does not model yet, such as the construction
-workers and the internships, are submitted with [Client.Submit], and the
-schema of each of them is available from [Client.DocumentSchema].
+Every declaration family the Ministry publishes a reference payload for has a
+model of its own, and each family has a method of its own:
+`SubmitConstructionWorkers`, `SubmitInternships`, `SubmitMotorcycleUse`,
+`SubmitAnnualLeaves`, `SubmitIGEEReports`, `SubmitEPAReports` and
+`SubmitHireNotices`.
+
+The declarations the SDK does not model yet, such as the correction variants
+and the beneficiaries of the public benefit programmes, are submitted with
+[Client.Submit], and the schema of each of them is available from
+[Client.DocumentSchema].
 
 ```go
 package main
@@ -474,6 +493,9 @@ func main() {
 }
 ```
 
+The schedules have their own checks as well:
+`ergani.ValidateDailySchedules` and `ergani.ValidateWeeklySchedules`.
+
 The official schemas of the API are embedded in the SDK, so a payload can
 also be checked against the schema of its type.
 
@@ -533,6 +555,17 @@ func main() {
 	}
 }
 ```
+
+The platform also answers with the master data of the employer and of its
+branches, with the state of the digital working time, with the employees it
+holds and with the monthly employment state the labour inspector sees:
+
+- `Client.EmployerDetails` reads the master data of the employer.
+- `Client.BranchDetails` reads the master data of its branches.
+- `Client.WorkingTimeStatus` reads the digital working time of the employees.
+- `Client.CurrentWorkforce` reads the employees the employer holds.
+- `Client.MonthlyStatus` reads the monthly employment state, the counters the
+  labour inspector sees.
 
 ### Discovery
 
@@ -668,6 +701,10 @@ The identifier of the declaration type is the one
 [SubmissionType.DocumentID] reports, or the code of the type. The API
 supports the recall for the leave declarations.
 
+A declaration that was submitted can be read back as a PDF with
+`Client.DocumentPDF`, which asks the API for the document of a protocol and
+decodes it.
+
 ### Error handling
 
 Every failure of the API is reported as an `*ergani.APIError`, which carries
@@ -720,6 +757,11 @@ A declaration that the SDK rejects before it reaches the API carries a
 | `ErrRateLimited` | 429 | The API asked the client to slow down. |
 | `ErrServer` | 5xx | The API itself failed. |
 
+The status code of a failure is read with `ergani.StatusCode(err)`, and
+`ergani.IsStatusCode(err, 429)` reports whether the API asked the client to
+slow down. `ergani.CodeOf(err)` returns the type of the declaration a
+rejection belongs to.
+
 ### Retries and timeouts
 
 A request is retried when the API answers with `429` or with a `5xx` status,
@@ -752,6 +794,17 @@ failure.
 | End of a fixed term contract | `SubmitTermination` | `WebE7N` |
 | Change of the working time | `SubmitWorkStatusChange` | `WKChgWK` |
 | Exemption from the duty of advance notification | `SubmitExemptionNotification` | `ExProan` |
+| Use of a motorcycle | `SubmitMotorcycleUse` | `WebE13` |
+| Annual leave | `SubmitAnnualLeaves` | `WebEA` |
+| IGEE report | `SubmitIGEEReports` | `WebIgee` |
+| EPA report | `SubmitEPAReports` | `WebEpa` |
+| Hire notice | `SubmitHireNotices` | `E3` |
+
+A family with more than one declaration type takes the type as an argument:
+`SubmitHire` carries the four kinds of hire, `SubmitTermination` the
+thirteen kinds of termination and `SubmitEmploymentChange` the two kinds of
+change of the employment. The constants of the package name each of them,
+such as `ergani.HireNew` or `ergani.TerminationDismissalWithNotice`.
 
 Every declaration type the SDK models is covered by a test that compares its
 payload with the reference payload the Ministry publishes, field for field.
@@ -788,9 +841,9 @@ ergani-go-sdk/
 ```
 
 The E8 overtime form was replaced by the working time overtime declarations,
-and the API rejects its payload. `SubmitOvertime` is kept because the form is
-part of the official sample archive, but `SubmitOvertimeSchedules` is the way
-to declare overtime.
+and the API rejects its payload. The code of the form, `CodeOvertimeE8`, is
+kept because it is part of the official sample archive, but
+`SubmitOvertimeSchedules` is the way to declare overtime.
 
 ## Glossary
 

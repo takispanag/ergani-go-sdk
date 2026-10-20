@@ -10,6 +10,36 @@ may break the public API.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-21
+
+The release that brings the documentation back in line with the code.
+
+### Fixed
+
+- The README no longer claims that `SubmitOvertime` exists: the E8 overtime
+  form was replaced by the working time overtime declarations, and only the
+  code of the form is kept.
+- The README no longer says that the construction workers and the internships
+  are not modelled. Every family the Ministry publishes a reference payload
+  for has a model and a method of its own, and the table of the declaration
+  types now carries all of them.
+- The README mentions the methods that were missing from it: the ones of the
+  five declaration families that had none, the ones of the master data of the
+  employer, the ones of the error helpers, the ones of the schedule
+  validators and the ones of the variants of the schedules.
+- `CONTRIBUTING.md` says that the SDK supports Go 1.19 and later. The floor
+  is Go 1.21, since v0.3.0.
+- `CONTRIBUTING.md` does not mention that the models are generated, and that
+  `make check` fails when the committed code is not the code the generator
+  writes.
+- `DESIGN.md` listed the public API of v0.2.0, which no longer exists in
+  that shape. It carries the API of today now.
+
+### Added
+
+- `testdata/official/README.md` points at the directories that hold the
+  reference payloads of the other declarations.
+
 ## [0.6.0] - 2026-10-21
 
 The release that brings the generation of the models into the module, in Go.

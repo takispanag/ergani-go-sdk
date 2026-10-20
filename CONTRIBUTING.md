@@ -11,14 +11,31 @@ make check
 ```
 
 `make check` runs everything the CI runs: the formatting check, `go vet`, the
-test suite with the race detector, golangci-lint and the compilation of every
-Go example of the README.
+test suite with the race detector, golangci-lint, the compilation of every
+Go example of the README and the check that the generated code is up to date.
 
 The linter is skipped when golangci-lint is not installed. To install it:
 
 ```sh
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 ```
+
+## The models are generated
+
+The models of the declarations are written by the generator of the module,
+which reads the reference payloads of the Ministry and the schemas that
+describe them. Never edit `declarations.go`, `declarations_wire.go`,
+`declarations_golden_test.go` or `internal/wire/declarations.go` by hand: the
+next run of the generator overwrites them.
+
+```sh
+make generate        # write the code of the models
+make generate-check  # fail when the committed code is not the code the generator writes
+```
+
+A new field of a declaration is a change of the tables in
+`tools/generate/tables.go`, and the test that compares every payload with the
+reference payload of the Ministry tells whether the change is right.
 
 ## Reporting a bug
 
@@ -52,7 +69,7 @@ reproduced without touching the real API.
 
 ## Compatibility
 
-The SDK supports Go 1.19 and later. A change that drops the support of an
+The SDK supports Go 1.21 and later. A change that drops the support of an
 older release is a breaking change and needs a major version bump.
 
 ## Security

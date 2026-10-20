@@ -1,4 +1,9 @@
-# Design: ergani-go-sdk v0.2.0
+# Design: ergani-go-sdk
+
+This is the design record of the SDK: the official sources it is built on, the
+defects it had to fix, and the decisions that shaped it. The research was
+done for v0.2.0 and has not changed since; the public API of §4 has moved on
+since, and carries the API of today.
 
 Grounded in the official sources fetched on 2026-10-21:
 
@@ -77,12 +82,18 @@ carries 89–119 fields per form, with a large shared core.
 This is the only design that reaches full coverage without several thousand
 lines of struct tags, and it keeps the typed surface where the traffic is.
 
+What shipped, in the end: the card sector is typed, and so is every
+declaration family the Ministry publishes a reference payload for, which is
+31 of them. The models of the declarations are generated out of those
+payloads and the schemas, so the wire format is the one the Ministry writes
+rather than one written by hand. The generic path is still there for the
+declarations no payload is published for.
+
 ## 4. Public API
 
 ```go
 // Construction
-func NewClient(username, password string, opts ...Option) (*Client, error)
-func NewClientWithConfig(cfg Config) (*Client, error)
+func New(username, password string, opts ...Option) (*Client, error)
 
 // Auth
 func (c *Client) Authenticate(ctx context.Context) (*Token, error)
@@ -91,18 +102,35 @@ func (c *Client) Logout(ctx context.Context) error
 
 // Documents
 func (c *Client) ListSubmissions(ctx context.Context) ([]SubmissionType, error)
-func (c *Client) DocumentSchema(ctx context.Context, code string) (json.RawMessage, error)
-func (c *Client) Submit(ctx context.Context, code string, payload any) ([]Submission, error)
+func (c *Client) DocumentSchema(ctx context.Context, code DocumentCode) (json.RawMessage, error)
+func (c *Client) Submit(ctx context.Context, code DocumentCode, payload any) ([]Submission, error)
 func (c *Client) CancelDocument(ctx context.Context, req CancelRequest) error
-func (c *Client) DocumentPDF(ctx context.Context, code, protocol string, submitted time.Time) ([]byte, error)
+func (c *Client) DocumentPDF(ctx context.Context, code DocumentCode, protocol string, submitted time.Time) ([]byte, error)
 
-// Typed forms
-func (c *Client) SubmitWorkCard(ctx context.Context, cards []CompanyWorkCard) ([]Submission, error)
-func (c *Client) SubmitDailySchedule(...)
-func (c *Client) SubmitWeeklySchedule(...)
-func (c *Client) SubmitOvertimeSchedule(...)   // WTOOv
-func (c *Client) SubmitLeave(...)              // wtoHoliday
-func (c *Client) SubmitOvertime(...)           // OvTime (E8)
+// The card sector
+func (c *Client) SubmitWorkCards(ctx context.Context, declarations []WorkCardDeclaration) ([]Submission, error)
+func (c *Client) SubmitDailySchedules(ctx context.Context, declarations []DailyScheduleDeclaration) ([]Submission, error)
+func (c *Client) SubmitWeeklySchedules(ctx context.Context, declarations []WeeklyScheduleDeclaration) ([]Submission, error)
+func (c *Client) SubmitOvertimeSchedules(ctx context.Context, declarations []OvertimeScheduleDeclaration) ([]Submission, error)
+func (c *Client) SubmitLeaves(ctx context.Context, declarations []LeaveDeclaration) ([]Submission, error)
+
+// The declaration families, each with its variants
+func (c *Client) SubmitHire(ctx context.Context, variant HireVariant, declaration HireDeclaration) ([]Submission, error)
+func (c *Client) SubmitTermination(ctx context.Context, variant TerminationVariant, declaration TerminationDeclaration) ([]Submission, error)
+func (c *Client) SubmitEmploymentChange(ctx context.Context, variant EmploymentChangeVariant, declaration EmploymentChangeDeclaration) ([]Submission, error)
+func (c *Client) SubmitConstructionWorkers(ctx context.Context, variant ConstructionWorkerVariant, declaration ConstructionWorkerDeclaration) ([]Submission, error)
+func (c *Client) SubmitInternships(ctx context.Context, variant InternshipVariant, declaration InternshipDeclaration) ([]Submission, error)
+func (c *Client) SubmitParentalLeaves(ctx context.Context, variant ParentalLeaveVariant, declaration ParentalLeaveDeclaration) ([]Submission, error)
+func (c *Client) SubmitMotorcycleUse(ctx context.Context, variant MotorcycleVariant, declaration MotorcycleDeclaration) ([]Submission, error)
+func (c *Client) SubmitUrgentHirings(ctx context.Context, variant UrgentHiringVariant, declaration UrgentHiringDeclaration) ([]Submission, error)
+func (c *Client) SubmitAnnualLeaves(ctx context.Context, variant AnnualLeaveVariant, declaration AnnualLeaveDeclaration) ([]Submission, error)
+func (c *Client) SubmitIGEEReports(ctx context.Context, variant IGEEReportVariant, declaration IGEEReportDeclaration) ([]Submission, error)
+func (c *Client) SubmitEPAReports(ctx context.Context, variant EPAReportVariant, declaration EPAReportDeclaration) ([]Submission, error)
+func (c *Client) SubmitHireNotices(ctx context.Context, variant HireNoticeVariant, declaration HireNoticeDeclaration) ([]Submission, error)
+
+// The working time organisation
+func (c *Client) SubmitWorkStatusChange(ctx context.Context, declaration WorkStatusChangeDeclaration) ([]Submission, error)
+func (c *Client) SubmitExemptionNotification(ctx context.Context, declaration ExemptionDeclaration) ([]Submission, error)
 
 // Services
 func (c *Client) Services(ctx context.Context) ([]Service, error)
@@ -117,15 +145,19 @@ Design rules applied:
   `errors.Is(err, ErrUnauthorized)` works.
 - The API answers with `{"message": ...}` **or** a bare JSON string; the parser
   handles both, and it refuses to parse an HTML error page.
-- `Option` functions for the configuration, with `Config` kept for compatibility.
+- `Option` functions for the configuration, and nothing else.
 - The access token is refreshed on 401, and the refresh token is used when the
   access token has expired.
+- The public models carry no JSON tags; the format the API expects lives in
+  `internal/wire`, so it can change without breaking the API.
 
 ## 5. Testing
 
-- Golden files per document type, compared byte for byte, so a change of the
+- Golden files per document type, compared field for field, so a change of the
   wire format shows up in the diff of a pull request.
 - `httptest` servers for every route, including the 401-refresh path.
 - Table tests for the date formats and the error parser.
 - `Example` functions for the godoc, which the CI compiles.
 - A fuzz target for the error-body parser, which the API keeps changing.
+- A check that the generated code is the code the generator writes, so the
+  models cannot drift away from the reference payloads.

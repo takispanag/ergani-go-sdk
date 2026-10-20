@@ -12,6 +12,10 @@ The two work card samples are the exception: `Card.json` carries a trailing
 comma, which is not valid JSON, and `f_aitiologia` is an empty string where
 the API documents null. Both are as published.
 
+The reference payloads of the other declarations live next door, in
+`testdata/declarations`, and the ones of the employment family in
+`testdata/employment`.
+
 The files are not covered by the licence of this repository. They belong to the
 Ministry of Labour and are reproduced here so that the format they describe
 can be tested against.
