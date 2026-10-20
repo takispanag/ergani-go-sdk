@@ -17,12 +17,16 @@ type WorkCard struct {
 }
 
 // CompanyWorkCard groups work card entries for a single business branch.
+//
+// The work card entries are nested one level deeper on the wire
+// ({"Details": {"CardDetails": [...]}}), so this type provides its own
+// MarshalJSON implementation. See marshal.go.
 type CompanyWorkCard struct {
 	EmployerTaxID        string `json:"f_afm_ergodoti"`
 	BusinessBranchNumber int    `json:"f_aa"`
 	Comments             string `json:"f_comments,omitempty"`
 	// CardDetails are nested within "Details>CardDetails" in the final JSON.
-	CardDetails []WorkCard `json:"Details>CardDetails"`
+	CardDetails []WorkCard `json:"-"`
 }
 
 // Overtime represents an overtime entry for an employee on a specific date.
@@ -42,6 +46,10 @@ type Overtime struct {
 }
 
 // CompanyOvertime groups overtime entries for a single business branch.
+//
+// The overtime entries are nested one level deeper on the wire
+// ({"Ergazomenoi": {"OvertimeErgazomenosDate": [...]}}), so this type
+// provides its own MarshalJSON implementation. See marshal.go.
 type CompanyOvertime struct {
 	BusinessBranchNumber int    `json:"f_aa_pararthmatos"`
 	SEPEServiceCode      string `json:"f_ypiresia_sepe"`
@@ -50,7 +58,7 @@ type CompanyOvertime struct {
 	KallikratisCode      string `json:"f_kallikratis_pararthmatos"`
 	LegalRepTaxID        string `json:"f_afm_proswpoy"`
 	// EmployeeOvertimes are nested within "Ergazomenoi>OvertimeErgazomenosDate".
-	EmployeeOvertimes      []Overtime `json:"Ergazomenoi>OvertimeErgazomenosDate"`
+	EmployeeOvertimes      []Overtime `json:"-"`
 	RelatedProtocolID      string     `json:"f_rel_protocol,omitempty"`
 	RelatedProtocolDate    *Date      `json:"f_rel_date,omitempty"`
 	EmployerOrganization   string     `json:"f_ergodotikh_organwsh,omitempty"`
@@ -70,45 +78,61 @@ type WorkdayDetails struct {
 }
 
 // EmployeeDailySchedule represents the complete work schedule for an employee for one day.
+//
+// The working hours are nested one level deeper on the wire
+// ({"ErgazomenosAnalytics": {"ErgazomenosWTOAnalytics": [...]}}), so this type
+// provides its own MarshalJSON implementation. See marshal.go.
 type EmployeeDailySchedule struct {
 	EmployeeTaxID     string `json:"f_afm"`
 	EmployeeLastName  string `json:"f_eponymo"`
 	EmployeeFirstName string `json:"f_onoma"`
 	ScheduleDate      Date   `json:"f_date"`
 	// WorkdayDetails are nested within "ErgazomenosAnalytics>ErgazomenosWTOAnalytics".
-	WorkdayDetails []WorkdayDetails `json:"ErgazomenosAnalytics>ErgazomenosWTOAnalytics"`
+	WorkdayDetails []WorkdayDetails `json:"-"`
 }
 
 // CompanyDailySchedule groups daily employee schedules for a business branch.
+//
+// The employee schedules are nested one level deeper on the wire
+// ({"Ergazomenoi": {"ErgazomenoiWTO": [...]}}), so this type provides its own
+// MarshalJSON implementation. See marshal.go.
 type CompanyDailySchedule struct {
 	BusinessBranchNumber int   `json:"f_aa_pararthmatos"`
 	StartDate            *Date `json:"f_from_date,omitempty"`
 	EndDate              *Date `json:"f_to_date,omitempty"`
 	// EmployeeSchedules are nested within "Ergazomenoi>ErgazomenoiWTO".
-	EmployeeSchedules   []EmployeeDailySchedule `json:"Ergazomenoi>ErgazomenoiWTO"`
+	EmployeeSchedules   []EmployeeDailySchedule `json:"-"`
 	RelatedProtocolID   string                  `json:"f_rel_protocol,omitempty"`
 	RelatedProtocolDate *Date                   `json:"f_rel_date,omitempty"`
 	Comments            string                  `json:"f_comments,omitempty"`
 }
 
 // EmployeeWeeklySchedule represents a weekly schedule entry for an employee for a specific weekday.
+//
+// The working hours are nested one level deeper on the wire
+// ({"ErgazomenosAnalytics": {"ErgazomenosWTOAnalytics": [...]}}), so this type
+// provides its own MarshalJSON implementation. See marshal.go.
 type EmployeeWeeklySchedule struct {
 	EmployeeTaxID     string  `json:"f_afm"`
 	EmployeeLastName  string  `json:"f_eponymo"`
 	EmployeeFirstName string  `json:"f_onoma"`
 	ScheduleDay       Weekday `json:"f_day"`
 	// WorkdayDetails are nested within "ErgazomenosAnalytics>ErgazomenosWTOAnalytics".
-	WorkdayDetails []WorkdayDetails `json:"ErgazomenosAnalytics>ErgazomenosWTOAnalytics"`
+	WorkdayDetails []WorkdayDetails `json:"-"`
 }
 
 // CompanyWeeklySchedule groups weekly employee schedules for a business branch
 // over a specified date range.
+//
+// The employee schedules are nested one level deeper on the wire
+// ({"Ergazomenoi": {"ErgazomenoiWTO": [...]}}), so this type provides its own
+// MarshalJSON implementation. See marshal.go.
 type CompanyWeeklySchedule struct {
 	BusinessBranchNumber int  `json:"f_aa_pararthmatos"`
 	StartDate            Date `json:"f_from_date"`
 	EndDate              Date `json:"f_to_date"`
 	// EmployeeSchedules are nested within "Ergazomenoi>ErgazomenoiWTO".
-	EmployeeSchedules   []EmployeeWeeklySchedule `json:"Ergazomenoi>ErgazomenoiWTO"`
+	EmployeeSchedules   []EmployeeWeeklySchedule `json:"-"`
 	RelatedProtocolID   string                   `json:"f_rel_protocol,omitempty"`
 	RelatedProtocolDate *Date                    `json:"f_rel_date,omitempty"`
 	Comments            string                   `json:"f_comments,omitempty"`
