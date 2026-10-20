@@ -2,12 +2,19 @@ package ergani
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 )
 
-// APIError represents a generic error returned by the Ergani API.
+// ErrUnauthorized is reported when the Ergani API rejects the supplied
+// credentials or the access token. Use errors.Is to detect it:
+//
+//	if errors.Is(err, ergani.ErrUnauthorized) { ... }
+var ErrUnauthorized = errors.New("ergani: unauthorized")
+
+// APIError represents a generic error returned from the Ergani API.
 // It captures the HTTP status code, a parsed error message, and the full
 // raw response body for debugging.
 type APIError struct {
@@ -59,6 +66,16 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("API error (status %d): %s", e.StatusCode, e.Message)
 }
 
+// Unwrap makes a 401 API error match ErrUnauthorized, so that callers can use
+// errors.Is instead of inspecting the status code themselves.
+func (e *APIError) Unwrap() error {
+	if e.StatusCode == http.StatusUnauthorized {
+		return ErrUnauthorized
+	}
+
+	return nil
+}
+
 // AuthenticationError is a specific type of error for authentication failures.
 // It is used when authentication succeeds but the server doesn't return a token.
 type AuthenticationError struct {
@@ -68,4 +85,20 @@ type AuthenticationError struct {
 // Error implements the standard error interface.
 func (e *AuthenticationError) Error() string {
 	return fmt.Sprintf("authentication failed: %s", e.Message)
+}
+
+// Unwrap makes an authentication failure match ErrUnauthorized.
+func (e *AuthenticationError) Unwrap() error {
+	return ErrUnauthorized
+}
+
+// IsStatusCode reports whether err is an *APIError carrying the given HTTP
+// status code.
+func IsStatusCode(err error, code int) bool {
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == code
+	}
+
+	return false
 }
