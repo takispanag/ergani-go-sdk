@@ -2,14 +2,14 @@ GO ?= go
 BINARY ?= ergani-app
 COVERAGE ?= coverage.out
 
-.PHONY: all build test test-race cover vet fmt fmt-check lint readme tidy check clean
+.PHONY: all build test test-race cover fuzz vet fmt fmt-check lint readme tidy check clean
 
 all: check
 
-## build: compile the package and the example binary
+## build: compile the package and the example command
 build:
 	$(GO) build ./...
-	$(GO) build -o $(BINARY) .
+	$(GO) build -o $(BINARY) ./cmd/ergani-example
 
 ## test: run the test suite
 test:
@@ -23,6 +23,10 @@ test-race:
 cover:
 	$(GO) test -covermode=atomic -coverprofile=$(COVERAGE) ./...
 	$(GO) tool cover -func=$(COVERAGE)
+
+## fuzz: fuzz the parsers of the API
+fuzz:
+	$(GO) test -run=^$$ -fuzz=FuzzNewAPIError -fuzztime=30s .
 
 ## vet: run go vet
 vet:

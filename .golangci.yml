@@ -3,13 +3,19 @@ run:
 
 linters:
   enable:
+    - bodyclose
+    - containedctx
     - errcheck
+    - errname
     - errorlint
+    - exhaustive
     - gofmt
     - govet
     - ineffassign
     - misspell
+    - noctx
     - staticcheck
+    - thelper
     - unused
 
 linters-settings:
@@ -17,14 +23,25 @@ linters-settings:
     check-type-assertions: true
     check-blank: true
   misspell:
-    locale: US
+    # The domain vocabulary of the platform is British: the Ministry of
+    # Labour, the working time organisation, the catalogues of the codes.
+    locale: UK
+    ignore-words:
+      - analyses
+      - analyse
+      # The name of the HTTP status, as the standard library spells it.
+      - unauthorized
   staticcheck:
     checks: ["all"]
+  exhaustive:
+    default-signifies-exhaustive: true
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-rules:
+    # The tests report the failures of the calls they check on purpose.
     - path: _test\.go
       linters:
         - errcheck
+        - bodyclose
