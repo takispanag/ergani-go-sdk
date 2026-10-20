@@ -87,7 +87,7 @@ type Client struct {
 	maxRetries   int
 	retryBackoff time.Duration
 
-	// authMu serialises authentication so that concurrent callers do not
+	// authMu serializes authentication so that concurrent callers do not
 	// trigger a burst of login requests.
 	authMu sync.Mutex
 
@@ -401,7 +401,7 @@ func (c *Client) backoff(attempt int) time.Duration {
 }
 
 // retryDelay returns the delay to wait before the given attempt is retried,
-// honouring the Retry-After header when the API sends one.
+// honoring the Retry-After header when the API sends one.
 func (c *Client) retryDelay(resp *http.Response, attempt int) time.Duration {
 	if delay := parseRetryAfter(resp.Header.Get("Retry-After")); delay > 0 {
 		return delay
@@ -447,7 +447,7 @@ func encodePayload(payload interface{}) ([]byte, error) {
 	return bodyBytes, nil
 }
 
-// sleep waits for the given duration, or until the context is cancelled.
+// sleep waits for the given duration, or until the context is canceled.
 func sleep(ctx context.Context, d time.Duration) error {
 	if d <= 0 {
 		select {

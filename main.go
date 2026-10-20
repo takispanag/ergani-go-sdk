@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -67,7 +68,8 @@ func main() {
 	submissionResponses, err := client.SubmitWorkCard(ctx, workCards)
 	if err != nil {
 		// The custom error types can be inspected for more details
-		if apiErr, ok := err.(*ergani.APIError); ok {
+		var apiErr *ergani.APIError
+		if errors.As(err, &apiErr) {
 			log.Fatalf("API Error occurred. Status: %d, Message: %s, Response: %s", apiErr.StatusCode, apiErr.Message, apiErr.Response)
 		}
 		log.Fatalf("Failed to submit work card: %v", err)

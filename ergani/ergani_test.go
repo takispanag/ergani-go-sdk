@@ -3,6 +3,7 @@ package ergani
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -120,8 +121,8 @@ func TestNewClient_AuthFailure(t *testing.T) {
 		t.Fatal("Expected an error during client creation for bad credentials, but got nil")
 	}
 
-	apiErr, ok := err.(*APIError)
-	if !ok {
+	apiErr := &APIError{}
+	if !errors.As(err, &apiErr) {
 		t.Fatalf("Expected error to be of type APIError, but got %T", err)
 	}
 
@@ -183,8 +184,8 @@ func TestSubmitWorkCard_APIError(t *testing.T) {
 		t.Fatal("Expected an APIError, but got nil")
 	}
 
-	apiErr, ok := err.(*APIError)
-	if !ok {
+	apiErr := &APIError{}
+	if !errors.As(err, &apiErr) {
 		t.Fatalf("Expected error to be of type APIError, but got %T", err)
 	}
 	if apiErr.StatusCode != http.StatusBadRequest {

@@ -16,3 +16,13 @@
 
 # Go workspace file
 go.work
+
+# Local credentials, never commit them
+.env
+.env.*
+!.env.example
+
+# Build artefacts
+/ergani-app
+/bin/
+/dist/
