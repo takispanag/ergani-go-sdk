@@ -778,12 +778,13 @@ ergani-go-sdk/
 ├── services.go       the interoperability services
 ├── validator.go      the validator of a declaration
 ├── schema.go         the schemas of the Ministry
+├── generate.go       the directive that writes the generated code
 ├── internal/
 │   ├── wire/         the format the API expects
 │   └── schema/       the schemas of the Ministry
 ├── cmd/ergani-example/
 ├── testdata/         the reference payloads of the Ministry
-└── tools/            the generator of the models
+└── tools/generate/   the generator of the models
 ```
 
 The E8 overtime form was replaced by the working time overtime declarations,
@@ -924,14 +925,22 @@ official documentation of the interoperability guide of the Ministry.
 git clone https://github.com/takispanag/ergani-go-sdk.git
 cd ergani-go-sdk
 
-make test        # run the test suite
-make test-race   # run the test suite with the race detector
-make lint        # run golangci-lint, skipped when it is not installed
-make check       # everything the CI runs
+make test           # run the test suite
+make test-race      # run the test suite with the race detector
+make lint           # run golangci-lint, skipped when it is not installed
+make generate       # write the Go code of the declarations
+make check          # everything the CI runs
 ```
 
-The payload of every declaration type is compared with the reference payloads
-the Ministry publishes, in `testdata/official`, so a change of the wire
+The models of the declarations are generated out of the reference payloads
+and the schemas the Ministry publishes, so the wire format is the one the
+Ministry writes. The generator is written in Go and lives in
+`tools/generate`; the code it writes is committed, so the build of the
+module never needs it, and the CI checks that the committed code is the code
+the generator writes.
+
+The payload of every declaration type is compared with the reference payload
+the Ministry publishes, in `testdata/declarations`, so a change of the wire
 format shows up in the diff of a pull request. The examples of this file are
 compiled by the CI as well, so the documentation cannot drift away from the
 code.

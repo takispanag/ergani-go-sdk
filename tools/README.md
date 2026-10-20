@@ -1,23 +1,38 @@
-﻿# The generators of the models
+﻿# The generator of the models
 
-`generate_declarations.py` writes the wire structs, the public models, the
-translation between them, the submission methods and the test that compares
-every payload with the reference payload of the Ministry.
+`generate` writes the Go code of the declarations of the Ergani API: the wire
+structs, the public models, the translation between them, the submission
+methods and the test that compares every payload with the reference payload
+of the Ministry.
 
-The field sets come from the reference payloads and the field types from the
-official XSD schemas, both published by the Greek Ministry of Labour in the
-sample archive of the interoperability guide.
+It reads the two things the Ministry publishes:
 
-## Running them
+- the reference payloads of every declaration type, in `testdata/declarations`
+- the schemas that describe them, in `internal/schema/xsds`
+
+One table drives the four kinds of code, so they cannot drift apart. The
+generator is written in Go and uses the standard library only, so the module
+needs no other toolchain to be regenerated.
+
+## Running it
 
 ```sh
-uv run --with pypdf python tools/extract_field_docs.py   # the descriptions
-uv run python tools/infer_field_types.py                 # the types
-uv run python tools/generate_declarations.py              # the Go code
-gofmt -w .
+go generate ./...
 ```
 
-The paths at the top of the generators point at a local copy of the sample
-archive of the Ministry; adjust them before running them.
+The directive lives in `generate.go`, in the root of the module, and the
+generator writes the code with the formatter of the standard library, so the
+result is the file `gofmt` would write.
 
-The code they write is committed, so the build never needs them.
+The code it writes is committed, so the build of the module never needs it.
+
+## What it reads
+
+| What | Where |
+| --- | --- |
+| The reference payloads | `testdata/declarations` |
+| The schemas of the Ministry | `internal/schema/xsds` |
+| The fields the public API names itself | `tools/generate/tables.go` |
+| The families of declarations | `tools/generate/tables.go` |
+
+The paths can be set with the flags `-root`, `-samples` and `-schemas`.

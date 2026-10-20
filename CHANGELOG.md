@@ -10,6 +10,32 @@ may break the public API.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
+The release that brings the generation of the models into the module, in Go.
+
+### Changed
+
+- **The generator of the models is written in Go.** It lived in Python, which
+  meant that the module needed a second toolchain to be regenerated, and
+  that the generator was outside the reach of the compiler, of the linter and
+  of the tests. It is now a program of the module, under `tools/generate`, and
+  it uses the standard library only.
+- **The generation is wired with `go generate`.** The directive lives in
+  `generate.go`, in the root of the module, so `go generate ./...` writes the
+  models and `make generate-check` fails when the committed code is not the
+  code the generator writes.
+- **The generator reads the module, not a copy of it.** The reference payloads
+  come from `testdata/declarations` and the schemas from
+  `internal/schema/xsds`, both of which the module already carries, so the
+  code can be regenerated from a fresh clone.
+- The generator writes the code with the formatter of the standard library,
+  so the file it writes is the file `gofmt` would write.
+
+### Added
+
+- The CI checks that the generated code is up to date.
+
 ## [0.5.0] - 2026-10-21
 
 The release that types the nested objects of the declarations, and that puts

@@ -2,7 +2,7 @@ GO ?= go
 BINARY ?= ergani-app
 COVERAGE ?= coverage.out
 
-.PHONY: all build test test-race cover fuzz vet fmt fmt-check lint readme tidy check clean
+.PHONY: all build test test-race cover fuzz vet fmt fmt-check lint readme tidy generate generate-check check clean
 
 all: check
 
@@ -54,12 +54,25 @@ lint:
 readme:
 	$(GO) run scripts/check_readme.go
 
+## generate: write the Go code of the declarations
+generate:
+	$(GO) generate ./...
+
+## generate-check: fail when the generated code is not up to date
+generate-check:
+	$(GO) generate ./...
+	@if ! git diff --exit-code; then \
+		echo "The generated code is not up to date."; \
+		echo "Run 'make generate' and commit what it writes."; \
+		exit 1; \
+	fi
+
 ## tidy: tidy up go.mod
 tidy:
 	$(GO) mod tidy
 
 ## check: run every check the CI runs
-check: fmt-check vet test-race lint readme
+check: fmt-check vet test-race lint readme generate-check
 
 ## clean: remove the build artefacts
 clean:
