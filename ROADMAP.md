@@ -4,32 +4,24 @@ The work that is still ahead for `ergani-go-sdk`. The items are tracked as
 [GitHub issues](https://github.com/takispanag/ergani-go-sdk/issues), so the
 progress of each one is visible.
 
-The platform exposes about fifty declaration types. The SDK models the card
-sector and the lifecycle of the employment, and submits the rest through the
-generic path.
+The platform exposes about fifty declaration types. The SDK models every one
+of them the Ministry publishes a reference payload for, which is 31 of them,
+and submits the rest through the generic path.
 
 ## The declarations that are not modelled yet
 
-- The special categories: the construction workers (`WebE12`, `WebE12Ap`),
-  the internships (`WebE35`), the beneficiaries of the public benefit
-  programmes (`WebE31`) and the theoretical training (`WebE32`). Their
-  payloads are small, and the schemas of the Ministry describe them.
-- The change of the employment (`WebMA`, `WebMAD`), which shares its core
-  with the hiring declaration and adds the reason of the change and the
-  types of the change.
-- The remaining working time variants: the retrospective daily schedule
-  (`WTODailyA`) and the one of the drivers (`WTODailyD`), the retrospective
-  overtime (`WTOOvA`) and the one of the drivers (`WTOOvD`).
+- The correction variants, such as `WebE14C` and `FastAnaC`. They share the
+  payload of the form they correct, so they are a variant of it rather than a
+  new type. The official reference implementation follows the same rule: only
+  six families have a correction code, and a correction of the other families
+  is expressed with the same code and the fields `f_rel_protocol` and
+  `f_rel_date`.
+- The beneficiaries of the public benefit programmes (`WebE31`) and the
+  theoretical training (`WebE32`). The Ministry publishes no reference
+  payload for them.
 
-## Reading the platform back
-
-- A typed model of the monthly employment state (`EX_BASE_04`), the payload
-  with the counters of every kind of leave, of the overtime and of the work
-  card. It is what the labour inspector sees, and it is what a declaration
-  has to be reconciled against.
-- The employer and the branch master data (`EX_BASE_01`, `EX_BASE_02`), with
-  a typed model rather than the raw payload.
-- The acceptance status of the essential terms (`EX_BASE_06`).
+Both are submitted with `Client.Submit`, and `Client.DocumentSchema` returns
+the shape the API expects.
 
 ## The tooling
 
@@ -40,9 +32,10 @@ generic path.
   cap of the working pattern, the leave days reconciled with the monthly
   state. The API offers no such check, and it is what the inspections look
   for.
-- A generator that keeps the models of the declarations in step with the
-  schemas, so that a new field of the API is a change of one table rather
-  than of a hundred lines.
+- The generator keeps the models in step with the schemas of the API: a new
+  field of a declaration is a change of one table, and the test that compares
+  every payload with the reference payload of the Ministry tells whether the
+  change is right.
 
 ## The stability of the API
 
