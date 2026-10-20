@@ -1,0 +1,25 @@
+{
+	"WTOS": {
+		"WTO": [
+			{
+				"f_aa_pararthmatos": "0",
+                "f_rel_protocol": "",
+                "f_rel_date": "",
+                "f_comments": "test",
+				"f_from_date": "",
+				"f_to_date": "",
+				"Ergazomenoi": {
+					"ErgazomenoiWTO": [
+						
+					{"f_afm": "999999999","f_eponymo": "ΤΕΣΤ","f_onoma": "ΤΕΣΤ","f_date": "11/04/2022",
+                            "ErgazomenosAnalytics": {
+                                "ErgazomenosWTOAnalytics": [
+                                    {"f_type": "ΕΡΓ","f_from": "09:00","f_to": "18:00" }
+                                ]
+                            } }
+					]
+				}
+			}
+		]
+	}
+}

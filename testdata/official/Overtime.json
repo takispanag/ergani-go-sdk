@@ -1,0 +1,27 @@
+{
+	"Overtimes": {
+		"Overtime": [
+			{
+				"f_aa_pararthmatos": "0",
+                "f_rel_protocol": "",
+                "f_rel_date": "",
+                "f_ypiresia_sepe": "21040",
+                "f_ergodotikh_organwsh": "TEST",
+                "f_kad_kyria": "0001",
+                "f_kad_deyt_1": "",
+                "f_kad_deyt_2": "",
+                "f_kad_deyt_3": "",
+                "f_kad_deyt_4": "",
+                "f_kad_pararthmatos": "0001",
+                "f_kallikratis_pararthmatos": "90010101",
+                "f_comments": "test",
+                "f_afm_proswpoy": "111111111",
+				"Ergazomenoi": {
+					"OvertimeErgazomenosDate": [
+					{"f_afm": "999999999", "f_amka":"01010101010" ,"f_eponymo": "ΤΕΣΤ","f_onoma": "ΤΕΣΤ","f_date": "06/06/2022", "f_from": "17:00","f_to": "19:00", "f_cancellation":"0", "f_step":"11", "f_reason":"002", "f_weekdates":"5", "f_asee":""}
+					]
+				}
+			}
+		]
+	}
+}
