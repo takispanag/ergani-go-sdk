@@ -38,9 +38,11 @@ type Client struct {
 	baseURL    *url.URL
 	httpClient HTTPClient
 	token      string
+	username   string
+	password   string
 }
 
-func NewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
+func NewClientWithConfig(config Config) (*Client, error) {
 	baseURL, err := url.Parse(config.BaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse base URL: %w", err)
@@ -58,10 +60,8 @@ func NewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
 	c := &Client{
 		baseURL:    baseURL,
 		httpClient: httpClient,
-	}
-
-	if err := c.authenticate(ctx, config.Username, config.Password); err != nil {
-		return nil, err
+		username:   config.Username,
+		password:   config.Password,
 	}
 
 	return c, nil
@@ -71,7 +71,7 @@ func NewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
 // It authenticates with the provided credentials and returns a client instance
 // ready to make API calls. An optional customBaseURL can be provided for testing
 // or to target a different API version/environment.
-func NewClient(ctx context.Context, username, password string, customBaseURL ...string) (*Client, error) {
+func NewClient(username, password string, customBaseURL ...string) (*Client, error) {
 	baseURL := defaultBaseURL
 	if len(customBaseURL) > 0 && customBaseURL[0] != "" {
 		baseURL = customBaseURL[0]
@@ -84,7 +84,7 @@ func NewClient(ctx context.Context, username, password string, customBaseURL ...
 		Timeout:  DefaultTimeout,
 	}
 
-	return NewClientWithConfig(ctx, config)
+	return NewClientWithConfig(config)
 }
 
 // authenticate performs the initial authentication against the API to retrieve an access token.
@@ -112,17 +112,27 @@ func (c *Client) authenticate(ctx context.Context, username, password string) er
 	if err != nil {
 		return fmt.Errorf("authentication request failed: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return newAPIError(resp)
+		apiErr := newAPIError(resp)
+		if err := resp.Body.Close(); err != nil {
+			return fmt.Errorf("api error: %v (and failed to close body: %v)", apiErr, err)
+		}
+		return apiErr
 	}
 
 	var authResponse struct {
 		AccessToken string `json:"accessToken"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
-		return fmt.Errorf("failed to decode auth response: %w", err)
+
+	decodeErr := json.NewDecoder(resp.Body).Decode(&authResponse)
+	closeErr := resp.Body.Close()
+
+	if decodeErr != nil {
+		return fmt.Errorf("failed to decode auth response: %w", decodeErr)
+	}
+	if closeErr != nil {
+		return fmt.Errorf("failed to close auth response body: %w", closeErr)
 	}
 
 	if authResponse.AccessToken == "" {
@@ -137,6 +147,11 @@ func (c *Client) authenticate(ctx context.Context, username, password string) er
 // It marshals the payload, sets necessary headers (including the auth token),
 // and handles non-successful status codes.
 func (c *Client) request(ctx context.Context, method, path string, payload interface{}) (*http.Response, error) {
+	if c.token == "" {
+		if err := c.authenticate(ctx, c.username, c.password); err != nil {
+			return nil, err
+		}
+	}
 	var body io.Reader
 	if payload != nil {
 		bodyBytes, err := json.Marshal(payload)
@@ -160,7 +175,6 @@ func (c *Client) request(ctx context.Context, method, path string, payload inter
 		return nil, fmt.Errorf("request to %s failed: %w", path, err)
 	}
 
-	// Handle non-2xx responses
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		// For 204 No Content, the response is successful but has no body.
 		if resp.StatusCode == http.StatusNoContent {
@@ -184,9 +198,18 @@ func (c *Client) SubmitWorkCard(ctx context.Context, companyWorkCards []CompanyW
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	return parseSubmissionResponse(resp)
+	parsed, parseErr := parseSubmissionResponse(resp)
+	closeErr := resp.Body.Close()
+
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("failed to close response body: %w", closeErr)
+	}
+
+	return parsed, nil
 }
 
 // SubmitOvertime submits overtime records for employees.
@@ -201,9 +224,18 @@ func (c *Client) SubmitOvertime(ctx context.Context, companyOvertimes []CompanyO
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	return parseSubmissionResponse(resp)
+	parsed, parseErr := parseSubmissionResponse(resp)
+	closeErr := resp.Body.Close()
+
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("failed to close response body: %w", closeErr)
+	}
+
+	return parsed, nil
 }
 
 // SubmitDailySchedule submits daily work schedules for employees.
@@ -218,9 +250,18 @@ func (c *Client) SubmitDailySchedule(ctx context.Context, companyDailySchedules 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	return parseSubmissionResponse(resp)
+	parsed, parseErr := parseSubmissionResponse(resp)
+	closeErr := resp.Body.Close()
+
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("failed to close response body: %w", closeErr)
+	}
+
+	return parsed, nil
 }
 
 // SubmitWeeklySchedule submits weekly work schedules for employees.
@@ -235,7 +276,16 @@ func (c *Client) SubmitWeeklySchedule(ctx context.Context, companyWeeklySchedule
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	return parseSubmissionResponse(resp)
+	parsed, parseErr := parseSubmissionResponse(resp)
+	closeErr := resp.Body.Close()
+
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("failed to close response body: %w", closeErr)
+	}
+
+	return parsed, nil
 }

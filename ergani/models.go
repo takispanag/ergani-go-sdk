@@ -37,7 +37,7 @@ type Overtime struct {
 	OvertimeCancellation   Bool                      `json:"f_cancellation"`
 	EmployeeProfessionCode string                    `json:"f_step"`
 	OvertimeJustification  OvertimeJustificationType `json:"f_reason"`
-	WeeklyWorkdaysNumber   int                       `json:"f_weekdates"` // Valid values are 5 or 6
+	WeeklyWorkdaysNumber   int                       `json:"f_weekdates"`
 	ASEEApproval           string                    `json:"f_asee,omitempty"`
 }
 

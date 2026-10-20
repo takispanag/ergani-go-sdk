@@ -7,7 +7,6 @@ import (
 )
 
 func TestMapWorkCardMovementType(t *testing.T) {
-	// Test valid cases
 	val, err := mapWorkCardMovementType(Arrival)
 	if err != nil {
 		t.Errorf("Unexpected error for Arrival: %v", err)
@@ -24,7 +23,6 @@ func TestMapWorkCardMovementType(t *testing.T) {
 		t.Errorf("Expected Departure to map to '1', got '%s'", val)
 	}
 
-	// Test invalid case
 	_, err = mapWorkCardMovementType(WorkCardMovementType("INVALID"))
 	if err == nil {
 		t.Error("Expected error for invalid WorkCardMovementType, got nil")
@@ -32,7 +30,6 @@ func TestMapWorkCardMovementType(t *testing.T) {
 }
 
 func TestMapScheduleWorkType(t *testing.T) {
-	// Test valid cases
 	val, err := mapScheduleWorkType(WorkFromOffice)
 	if err != nil {
 		t.Errorf("Unexpected error for WorkFromOffice: %v", err)
@@ -49,7 +46,6 @@ func TestMapScheduleWorkType(t *testing.T) {
 		t.Errorf("Expected WorkFromHome to map to 'ΤΗΛ', got '%s'", val)
 	}
 
-	// Test invalid case
 	_, err = mapScheduleWorkType(ScheduleWorkType("INVALID"))
 	if err == nil {
 		t.Error("Expected error for invalid ScheduleWorkType, got nil")
@@ -57,7 +53,6 @@ func TestMapScheduleWorkType(t *testing.T) {
 }
 
 func TestCustomTimeTypes_MarshalJSON(t *testing.T) {
-	// Test Time
 	tm := Time{Time: time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC)}
 	b, err := json.Marshal(tm)
 	if err != nil {
@@ -67,7 +62,6 @@ func TestCustomTimeTypes_MarshalJSON(t *testing.T) {
 		t.Errorf(`Expected Time to marshal to "14:30", got %s`, string(b))
 	}
 
-	// Test Date
 	dt := Date{Time: time.Date(2025, 7, 10, 0, 0, 0, 0, time.UTC)}
 	b, err = json.Marshal(dt)
 	if err != nil {
@@ -77,7 +71,6 @@ func TestCustomTimeTypes_MarshalJSON(t *testing.T) {
 		t.Errorf(`Expected Date to marshal to "10/07/2025", got %s`, string(b))
 	}
 
-	// Test Bool
 	bTrue := Bool(true)
 	b, err = json.Marshal(bTrue)
 	if err != nil {
@@ -97,7 +90,6 @@ func TestCustomTimeTypes_MarshalJSON(t *testing.T) {
 	}
 }
 
-// Add comprehensive table-driven tests for all enum mappings
 func TestEnumMappings(t *testing.T) {
 	t.Run("WorkCardMovementType", func(t *testing.T) {
 		tests := []struct {
