@@ -1,18 +1,37 @@
 # Ergani Go SDK
 
-`ergani-go-sdk` is a Go SDK for interacting with the API of [Ergani](https://www.gov.gr/en/ipiresies/ergasia-kai-asphalise/apozemioseis-kai-parokhes/prosopopoiemene-plerophorese-misthotou-ergane).
+[![CI](https://github.com/takispanag/ergani-go-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/takispanag/ergani-go-sdk/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/takispanag/ergani-go-sdk.svg)](https://pkg.go.dev/github.com/takispanag/ergani-go-sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/takispanag/ergani-go-sdk)](https://goreportcard.com/report/github.com/takispanag/ergani-go-sdk)
+[![License: MIT](https://img.shields.io/github/license/takispanag/ergani-go-sdk)](https://opensource.org/licenses/MIT)
 
-## Inspired by
-- [ergani-python](https://github.com/withlogicco/ergani-python-sdk) Python SDK by [LOGIC](https://withlogic.co/)
-- [ergani-rust](https://github.com/pavlospt/ergani-rust-sdk) Rust SDK by [@pavlospt](https://github.com/pavlospt)
+`ergani-go-sdk` is a Go SDK for interacting with the API of [Ergani](https://www.gov.gr/en/ipiresies/ergasia-kai-asphalise/apozemioseis-kai-parokhes/prosopopoiemene-plerophorese-misthotou-ergane),
+the Greek Ministry of Labour's platform for declaring employee movements,
+overtime and working schedules.
+
+It is meant for Greek employers who need to submit those declarations
+programmatically instead of filling in the web form by hand. The package has
+no third-party dependencies: it only uses the Go standard library, so it drops
+into an existing service without pulling anything else in.
+
+## Features
+
+- Submit work cards (arrival and departure declarations)
+- Submit overtime declarations
+- Submit daily work schedules
+- Submit weekly work schedules
+- Typed errors, so a rejected payload can be told apart from an expired token
+- Automatic re-authentication when the access token expires
+- Retries with exponential backoff for transient API failures
+- A `HTTPClient` hook, so the client can be tested without touching the network
 
 ## Requirements
 
-Go 1.19 or later
+Go 1.19 or later.
 
 ## Installation
 
-```bash
+```sh
 go get github.com/takispanag/ergani-go-sdk
 ```
 
@@ -20,41 +39,70 @@ go get github.com/takispanag/ergani-go-sdk
 
 ### Create a client
 
-To create a new Ergani client you have to set your Ergani username, password and optionally the Ergani API base URL, that defaults to https://trialeservices.yeka.gr/WebServicesAPI/api.
+To create a new Ergani client you have to set your Ergani username, password
+and optionally the Ergani API base URL, which defaults to
+`https://trialeservices.yeka.gr/WebServicesAPI/api`.
 
 ```go
+package main
+
 import (
-"context"
-"os"
-"time"
-"github.com/takispanag/ergani-go-sdk/ergani"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk/ergani"
 )
 
 func main() {
-ctx := context.Background()
+	config := ergani.Config{
+		Username: os.Getenv("ERGANI_USERNAME"),
+		Password: os.Getenv("ERGANI_PASSWORD"),
+		BaseURL:  os.Getenv("ERGANI_BASE_URL"), // Optional, defaults to the trial URL
+		Timeout:  30 * time.Second,             // Optional, defaults to 30 seconds
+	}
 
-config := ergani.Config{
-Username: os.Getenv("ERGANI_USERNAME"),
-Password: os.Getenv("ERGANI_PASSWORD"),
-BaseURL:  os.Getenv("ERGANI_BASE_URL"), // Optional, defaults to trial URL
-Timeout:  30 * time.Second,             // Optional, defaults to 30 seconds
-}
+	client, err := ergani.NewClientWithConfig(config)
+	if err != nil {
+		panic(err)
+	}
 
-client, err := ergani.NewClientWithConfig(ctx, config)
-if err != nil {
-panic(err)
-}
+	_ = client
+	fmt.Println("client ready")
 }
 ```
 
-If you intend to use this package for multiple company entities, it is necessary to create separate client instances for each entity with the appropriate credentials.
+If you intend to use this package for multiple company entities, it is
+necessary to create separate client instances for each entity with the
+appropriate credentials.
+
+The shorter form uses the default base URL and timeout:
+
+```go
+package main
+
+import (
+	"github.com/takispanag/ergani-go-sdk/ergani"
+)
+
+func main() {
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
+
+	_ = client
+}
+```
 
 ### Work card
 
-Submit work card records to Ergani in order to declare an employee's movement (arrival, departure).
+Submit work card records to Ergani in order to declare an employee's movement
+(arrival, departure).
 
+<!-- readme:skip -->
 ```go
-func (c *Client) SubmitWorkCard(ctx context.Context, cards []CompanyWorkCard) (*Response, error)
+func (c *Client) SubmitWorkCard(ctx context.Context, cards []CompanyWorkCard) ([]SubmissionResponse, error)
 ```
 
 #### Example
@@ -64,56 +112,63 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
 	"github.com/takispanag/ergani-go-sdk/ergani"
 )
 
 func main() {
-	// Assume client is already initialized
 	ctx := context.Background()
+
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
 
 	now := time.Now()
 	yesterday := now.AddDate(0, 0, -1)
 
 	workCard1 := ergani.WorkCard{
-		EmployeeTaxIdentificationNumber: "123456789",
-		EmployeeFirstName:              "first_name",
-		EmployeeLastName:               "last_name",
-		WorkCardMovementType:           "ARRIVAL",
-		WorkCardSubmissionDate:         now,
-		WorkCardMovementDateTime:       now,
+		EmployeeTaxID:            "123456789",
+		EmployeeFirstName:        "John",
+		EmployeeLastName:         "Doe",
+		WorkCardMovementType:     ergani.Arrival,
+		WorkCardSubmissionDate:   ergani.Date{Time: yesterday},
+		WorkCardMovementDateTime: ergani.DateTime{Time: yesterday},
 	}
 
-	workCard2 := ergani.WorkCard{
-		EmployeeTaxIdentificationNumber: "123456789",
-		EmployeeFirstName:              "first_name",
-		EmployeeLastName:               "last_name",
-		WorkCardMovementType:           "DEPARTURE",
-		WorkCardSubmissionDate:         now,
-		WorkCardMovementDateTime:       now,
-	}
+	workCard2 := workCard1
+	workCard2.WorkCardMovementType = ergani.Departure
+	workCard2.WorkCardMovementDateTime = ergani.DateTime{Time: now}
 
 	companyWorkCard := ergani.CompanyWorkCard{
-		EmployerTaxIdentificationNumber: "123456789",
-		BusinessBranchNumber:           1,
-		CardDetails:                    []ergani.WorkCard{workCard1, workCard2},
+		EmployerTaxID:        "999999999",
+		BusinessBranchNumber: 1,
+		CardDetails:          []ergani.WorkCard{workCard1, workCard2},
 	}
 
-	response, err := client.SubmitWorkCard(ctx, []ergani.CompanyWorkCard{companyWorkCard})
+	responses, err := client.SubmitWorkCard(ctx, []ergani.CompanyWorkCard{companyWorkCard})
 	if err != nil {
 		panic(err)
+	}
+
+	for _, response := range responses {
+		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
 	}
 }
 ```
 
-**Note:** You can submit work cards for various employees across multiple company branches simultaneously as shown above.
+**Note**: You can submit work cards for various employees across multiple
+company branches simultaneously as shown above.
 
 ### Overtime
 
-Submit overtime records to Ergani in order to declare employees overtimes.
+Submit overtime records to Ergani in order to declare employee overtimes.
 
+<!-- readme:skip -->
 ```go
-func (c *Client) SubmitOvertime(ctx context.Context, overtimes []CompanyOvertime) (*Response, error)
+func (c *Client) SubmitOvertime(ctx context.Context, overtimes []CompanyOvertime) ([]SubmissionResponse, error)
 ```
 
 #### Example
@@ -123,53 +178,67 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
 	"github.com/takispanag/ergani-go-sdk/ergani"
 )
 
 func main() {
-	// Assume client is already initialized
 	ctx := context.Background()
 
-	now := time.Now()
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
+
+	overtimeDate := time.Date(2025, 7, 10, 0, 0, 0, 0, time.UTC)
+	start := time.Date(2025, 7, 10, 18, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 7, 10, 20, 0, 0, 0, time.UTC)
 
 	overtime := ergani.Overtime{
-		EmployeeTaxIdentificationNumber: "123456789",
-		EmployeeSocialSecurityNumber:   "123456789",
-		EmployeeFirstName:              "first_name",
-		EmployeeLastName:               "last_name",
-		OvertimeDate:                   now,
-		OvertimeStartTime:              "18:00",
-		OvertimeEndTime:                "20:00",
-		OvertimeCancellation:           false,
-		EmployeeProfessionCode:         "123456",
-		OvertimeJustification:          "EXCEPTIONAL_WORKLOAD",
-		WeeklyWorkdaysNumber:           5,
+		EmployeeTaxID:          "123456789",
+		EmployeeSSN:            "987654321",
+		EmployeeFirstName:      "John",
+		EmployeeLastName:       "Doe",
+		OvertimeDate:           ergani.Date{Time: overtimeDate},
+		OvertimeStartTime:      ergani.Time{Time: start},
+		OvertimeEndTime:        ergani.Time{Time: end},
+		OvertimeCancellation:   false,
+		EmployeeProfessionCode: "123456",
+		OvertimeJustification:  ergani.ExceptionalWorkload,
+		WeeklyWorkdaysNumber:   5,
 	}
 
 	companyOvertime := ergani.CompanyOvertime{
-		BusinessBranchNumber:                     1,
-		SepeServiceCode:                         "12345",
-		BusinessPrimaryActivityCode:             "1234",
-		BusinessBranchActivityCode:              "1234",
-		KallikreatisMunicipalCode:              "12345678",
-		LegalRepresentativeTaxIdentificationNumber: "123456789",
-		EmployeeOvertimes:                       []ergani.Overtime{overtime},
+		BusinessBranchNumber: 1,
+		SEPEServiceCode:      "12345",
+		PrimaryActivityCode:  "1234",
+		BranchActivityCode:   "1234",
+		KallikratisCode:      "12345678",
+		LegalRepTaxID:        "999999999",
+		EmployeeOvertimes:    []ergani.Overtime{overtime},
 	}
 
-	response, err := client.SubmitOvertime(ctx, []ergani.CompanyOvertime{companyOvertime})
+	responses, err := client.SubmitOvertime(ctx, []ergani.CompanyOvertime{companyOvertime})
 	if err != nil {
 		panic(err)
+	}
+
+	for _, response := range responses {
+		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
 	}
 }
 ```
 
 ### Daily schedule
 
-Submit daily schedules to Ergani in order to declare schedules for employees that don't have a fixed schedule (e.g. shift workers).
+Submit daily schedules to Ergani in order to declare schedules for employees
+that don't have a fixed schedule (e.g. shift workers).
 
+<!-- readme:skip -->
 ```go
-func (c *Client) SubmitDailySchedule(ctx context.Context, schedules []CompanyDailySchedule) (*Response, error)
+func (c *Client) SubmitDailySchedule(ctx context.Context, schedules []CompanyDailySchedule) ([]SubmissionResponse, error)
 ```
 
 #### Example
@@ -179,29 +248,36 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
+
 	"github.com/takispanag/ergani-go-sdk/ergani"
 )
 
 func main() {
-	// Assume client is already initialized
 	ctx := context.Background()
 
-	now := time.Now()
-	tomorrow := now.AddDate(0, 0, 1)
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
+
+	scheduleDate := time.Date(2025, 7, 11, 0, 0, 0, 0, time.UTC)
+	start := time.Date(2025, 7, 11, 9, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 7, 11, 17, 0, 0, 0, time.UTC)
 
 	workdayDetails := ergani.WorkdayDetails{
-		WorkType:  "WORK_FROM_HOME",
-		StartTime: "09:00",
-		EndTime:   "17:00",
+		WorkType:  ergani.WorkFromOffice,
+		StartTime: ergani.Time{Time: start},
+		EndTime:   ergani.Time{Time: end},
 	}
 
 	employeeSchedule := ergani.EmployeeDailySchedule{
-		EmployeeTaxIdentificationNumber: "123456789",
-		EmployeeFirstName:              "first_name",
-		EmployeeLastName:               "last_name",
-		ScheduleDate:                   tomorrow,
-		WorkdayDetails:                 []ergani.WorkdayDetails{workdayDetails},
+		EmployeeTaxID:     "123456789",
+		EmployeeFirstName: "John",
+		EmployeeLastName:  "Doe",
+		ScheduleDate:      ergani.Date{Time: scheduleDate},
+		WorkdayDetails:    []ergani.WorkdayDetails{workdayDetails},
 	}
 
 	companySchedule := ergani.CompanyDailySchedule{
@@ -209,12 +285,202 @@ func main() {
 		EmployeeSchedules:    []ergani.EmployeeDailySchedule{employeeSchedule},
 	}
 
-	response, err := client.SubmitDailySchedule(ctx, []ergani.CompanyDailySchedule{companySchedule})
+	responses, err := client.SubmitDailySchedule(ctx, []ergani.CompanyDailySchedule{companySchedule})
 	if err != nil {
 		panic(err)
 	}
+
+	for _, response := range responses {
+		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
+	}
 }
 ```
+
+### Weekly schedule
+
+Submit weekly schedules to Ergani in order to declare the working pattern of
+an employee for every day of a week.
+
+<!-- readme:skip -->
+```go
+func (c *Client) SubmitWeeklySchedule(ctx context.Context, schedules []CompanyWeeklySchedule) ([]SubmissionResponse, error)
+```
+
+#### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk/ergani"
+)
+
+func main() {
+	ctx := context.Background()
+
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
+
+	weekStart := time.Date(2025, 7, 7, 0, 0, 0, 0, time.UTC)
+	weekEnd := time.Date(2025, 7, 13, 0, 0, 0, 0, time.UTC)
+	start := time.Date(2025, 7, 7, 9, 0, 0, 0, time.UTC)
+	end := time.Date(2025, 7, 7, 17, 0, 0, 0, time.UTC)
+
+	workdayDetails := ergani.WorkdayDetails{
+		WorkType:  ergani.WorkFromOffice,
+		StartTime: ergani.Time{Time: start},
+		EndTime:   ergani.Time{Time: end},
+	}
+
+	employeeSchedule := ergani.EmployeeWeeklySchedule{
+		EmployeeTaxID:     "123456789",
+		EmployeeFirstName: "John",
+		EmployeeLastName:  "Doe",
+		ScheduleDay:       ergani.Weekday{Weekday: time.Monday},
+		WorkdayDetails:    []ergani.WorkdayDetails{workdayDetails},
+	}
+
+	companySchedule := ergani.CompanyWeeklySchedule{
+		BusinessBranchNumber: 1,
+		StartDate:            ergani.Date{Time: weekStart},
+		EndDate:              ergani.Date{Time: weekEnd},
+		EmployeeSchedules:    []ergani.EmployeeWeeklySchedule{employeeSchedule},
+	}
+
+	responses, err := client.SubmitWeeklySchedule(ctx, []ergani.CompanyWeeklySchedule{companySchedule})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, response := range responses {
+		fmt.Printf("submitted %s with protocol %s\n", response.ID, response.Protocol)
+	}
+}
+```
+
+### Error handling
+
+Every failure of the API is reported as an `*ergani.APIError`, which carries the
+HTTP status code and the message returned by the service. A rejected token or
+a rejected set of credentials additionally matches `ergani.ErrUnauthorized`.
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/takispanag/ergani-go-sdk/ergani"
+)
+
+func main() {
+	ctx := context.Background()
+
+	client, err := ergani.NewClient("username", "password")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = client.SubmitWorkCard(ctx, nil)
+
+	switch {
+	case errors.Is(err, ergani.ErrUnauthorized):
+		fmt.Println("the credentials or the access token were rejected")
+	case ergani.IsStatusCode(err, 400):
+		fmt.Println("the API rejected the payload")
+	case err != nil:
+		fmt.Println("unexpected error:", err)
+	}
+}
+```
+
+### Retries and timeouts
+
+A request is retried when the API answers with `429` or with a `5xx` status, or
+when the connection fails. A `401` triggers a fresh authentication and a new
+attempt. The delay between two attempts grows exponentially and honours the
+`Retry-After` header.
+
+```go
+package main
+
+import (
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk/ergani"
+)
+
+func main() {
+	client, err := ergani.NewClientWithConfig(ergani.Config{
+		Username:     "username",
+		Password:     "password",
+		Timeout:      30 * time.Second,
+		MaxRetries:   3,           // Zero means ergani.DefaultMaxRetries
+		RetryBackoff: time.Second, // Zero means ergani.DefaultRetryBackoff
+		UserAgent:    "my-app/1.0",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_ = client
+}
+```
+
+### Testing against the SDK
+
+The client accepts any `HTTPClient`, which makes it easy to test the code that
+submits declarations without reaching the real API.
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/takispanag/ergani-go-sdk/ergani"
+)
+
+func main() {
+	client, err := ergani.NewClientWithConfig(ergani.Config{
+		Username:   "username",
+		Password:   "password",
+		HTTPClient: &http.Client{Timeout: 5 * time.Second},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_ = client
+	fmt.Println("client ready")
+}
+```
+
+## Development
+
+```sh
+git clone https://github.com/takispanag/ergani-go-sdk.git
+cd ergani-go-sdk
+
+make test        # run the test suite
+make lint        # run go vet and golangci-lint
+make check       # everything the CI runs
+```
+
+`make check` also compiles every Go example of this file, so the documentation
+cannot drift away from the code.
+
+The roadmap of the work still ahead lives in [ROADMAP.md](ROADMAP.md).
 
 ## Glossary
 
@@ -345,5 +611,3 @@ API (https://eservices.yeka.gr/(S(ayldvlj35eukgvmzrr055oe5))/Announcements.aspx?
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
