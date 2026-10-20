@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/takispanag/ergani-go-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/takispanag/ergani-go-sdk/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/takispanag/ergani-go-sdk.svg)](https://pkg.go.dev/github.com/takispanag/ergani-go-sdk)
-[![Go Report Card](https://goreportcard.com/badge/github.com/takispanag/ergani-go-sdk)](https://goreportcard.com/report/github.com/takispanag/ergani-go-sdk)
+[![golangci-lint](https://img.shields.io/badge/golangci--lint-latest-green.svg)](https://golangci-lint.run/)
 [![License: MIT](https://img.shields.io/github/license/takispanag/ergani-go-sdk)](https://opensource.org/licenses/MIT)
 
 `ergani-go-sdk` is a Go SDK for interacting with the API of [Ergani](https://www.gov.gr/en/ipiresies/ergasia-kai-asphalise/apozemioseis-kai-parokhes/prosopopoiemene-plerophorese-misthotou-ergane),

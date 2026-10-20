@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The badge of the sunset Go Report Card service was replaced by the badge of
+  golangci-lint, the linter the CI actually runs.
+
 ## [0.1.0] - 2026-10-21
 
 The first tagged release. It publishes the SDK, the documentation and the
