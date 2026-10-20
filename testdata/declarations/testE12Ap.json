@@ -1,0 +1,31 @@
+{
+	"Amoes": {
+		"Amoe": {
+			"f_aa_pararthmatos": "0",
+			"f_amoe": "9314023893",
+			"f_rel_protocol": "",
+			"f_rel_date": "",
+			"f_ypiresia_sepe": "11050",
+			"f_year": "2026",
+			"f_month": "3",
+			"f_kallikratis_pararthmatos": "92160201",
+			"f_comments": "",
+			"Ergazomenoi": {
+				"AmoeErgazomenosDate": {
+					"f_afm": "151619217",
+					"f_amka": "01010101010",
+					"f_ama": "53454486",
+					"f_eponymo": "ΕΠΩΝΥΜΟ_1",
+					"f_onoma": "ΟΝΟΜΑ_1",
+					"f_onoma_patera": "ΟΝΟΜΑ_2",
+					"f_days_worked": "15",
+					"f_step": "721109",
+					"f_ar_adeias": "",
+					"f_hire_date": "15/10/2019",
+					"f_apodoxes": "1500,00",
+					"f_notes": ""
+				}
+			}
+		}
+	}
+}

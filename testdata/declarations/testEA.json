@@ -1,0 +1,37 @@
+{
+	"YearHolidaysEA": {
+		"YearHolidayEA": {
+			"f_aa_pararthmatos": "0",
+			"f_rel_protocol": "",
+			"f_rel_date": "",
+			"f_year": "2021",
+			"f_ypiresia_sepe": "11080",
+			"f_ergodotikh_organwsh": "ΚΑΤΙ",
+			"f_kad_kyria": "4673",
+			"f_kad_deyt_1": "",
+			"f_kad_deyt_2": "",
+			"f_kad_deyt_3": "",
+			"f_kad_deyt_4": "",
+			"f_kad_pararthmatos": "4673",
+			"f_kallikratis_pararthmatos": "91790101",
+			"f_comments": "",
+			"f_afm_proswpoy": "013491461",
+			"Ergazomenoi": {
+				"ErgazomenoiEA": {
+					"f_aa": "1",
+					"f_afm": "151619217",
+					"f_amka": "01010101010",
+					"f_amika": "01010101",
+					"f_eponymo": "ΕΠΩΝΥΜΟ_1",
+					"f_onoma": "ΟΝΟΜΑ_1",
+					"f_proslipsidate": "01/11/2021",
+					"f_days_right": "10",
+					"f_days_received": "10",
+					"f_apodoxes": "200,00",
+					"f_apodoxes_sup": "100,00",
+					"f_comments": ""
+				}
+			}
+		}
+	}
+}

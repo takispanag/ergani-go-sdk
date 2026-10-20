@@ -10,6 +10,47 @@ may break the public API.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-21
+
+The release that covers the declaration types of the platform. Every one of
+them is now modelled and verified against the reference payloads the Ministry
+publishes.
+
+### Added
+
+- **The change of the employment** (`WebMA`, `WebMAD`), the notification an
+  employer files when the details of an employment change.
+- **The construction workers** (`WebE12`, `WebE12Ap`), the notification of
+  the personnel of a construction site.
+- **The internships** (`WebE35`, `WebE35D`, `WebE35T`), the start, the end
+  and the change of the schedule of an internship.
+- **The parental leave grant** (`WebE14`), the notification of the employer.
+- **The urgent hiring** (`FastAna`), the hire that covers an emergency need.
+- **The unified hiring notification** (`E3`), the form of Ergani II.
+- The annual leave notification (`WebEA`) and the reconciling reports of the
+  private employment offices (`WebIgee`) and of the temporary employment
+  agencies (`WebEpa`).
+- The models of the declarations are generated now. The generator is committed
+  under `tools/`, and it writes the wire structs, the public models, the
+  translation between them and the test that compares every payload with the
+  reference payload of the Ministry.
+
+### Changed
+
+- **Breaking** The models of the employment lifecycle moved to the generated
+  files. The names of the fields and of the variants did not change.
+- **Breaking** The nested objects of a declaration, the selections of the
+  beneficiary funds and the types of a change, are carried as raw JSON. The
+  API names their inner object after the declaration type, so the caller has
+  to build it.
+
+### Fixed
+
+- The API writes a day and a month with and without their leading zero. The
+  dates are read in both forms.
+- An amount that is not given is left empty, the way the API leaves it, and
+  not written as a zero.
+
 ## [0.3.0] - 2026-10-21
 
 The release that completes the API surface. The family of the employment
@@ -190,7 +231,8 @@ declaration type with the reference payloads the Ministry publishes.
 The import path changed as well: the package is `github.com/takispanag/ergani-go-sdk`
 and the subdirectory `ergani/` is gone.
 
-[Unreleased]: https://github.com/takispanag/ergani-go-sdk/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/takispanag/ergani-go-sdk/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/takispanag/ergani-go-sdk/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/takispanag/ergani-go-sdk/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/takispanag/ergani-go-sdk/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/takispanag/ergani-go-sdk/releases/tag/v0.1.0

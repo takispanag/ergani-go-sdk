@@ -42,7 +42,8 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 		d.Time = time.Time{}
 		return nil
 	}
-	parsed, err := time.Parse("02/01/2006", text)
+	// The API writes a day and a month with and without their leading zero.
+	parsed, err := time.Parse("2/1/2006", text)
 	if err != nil {
 		return fmt.Errorf("wire: %q is not a date of the form DD/MM/YYYY: %w", text, err)
 	}

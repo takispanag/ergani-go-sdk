@@ -1,0 +1,25 @@
+{
+	"MsE13": {
+		"ME13": {
+			"f_aa_pararthmatos": "0",
+			"f_ypiresia_sepe": "24010",
+			"f_ypiresia_oaed": "101213",
+			"f_comments": "",
+			"f_afm_proswpoy": "000000000",
+			"Mixanes": {
+				"MixanesE4": {
+					"f_licence_plate": "ΥΡΟ4534",
+					"f_is_owner": "1",
+					"f_afm_ergazomenou": "888888888",
+					"f_eponimo_ergazomenou": "ΕΠΩΝΥΜΟ_01",
+					"f_onoma_ergazomenou": "ΟΝΟΜΑ_01",
+					"f_onoma_patera": "ΟΝΟΜΑ_02",
+					"f_date_enarxis_xrisis": "15/09/2025",
+					"f_hour_enarxis_xrisis": "08:00",
+					"f_date_lixis_xrisis": "",
+					"f_paratiriseis": ""
+				}
+			}
+		}
+	}
+}

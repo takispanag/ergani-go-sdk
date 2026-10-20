@@ -1,0 +1,43 @@
+{
+	"ApologistikesEktheseisIgee": {
+		"ApologistikhEktheshIgee": {
+			"f_afm_ergodoti": "000000000",
+			"f_protocol_sxet": "",
+			"f_date_sxet": "",
+			"f_aa": "0",
+			"f_year": "2020",
+			"f_eksamhno": "Β",
+			"f_kallikratis": "91810101",
+			"f_ypiresia_sepe": "11020",
+			"f_ypiresia_oaed": "608201",
+			"f_no_mediation": "0",
+			"f_comments": "",
+			"Details": {
+				"ApologistikhEktheshIgeeDetails": [
+					{
+						"f_afm": "888888888",
+						"f_eponymo": "ΕΠΩΝΥΜΟ_1",
+						"f_onoma": "ΟΝΟΜΑ_1",
+						"f_sex": "1",
+						"f_age": "50",
+						"f_epipedo_morfosis": "17",
+						"f_eidikothta": "111030",
+						"f_unemployed": "1",
+						"f_nationality": ""
+					},
+					{
+						"f_afm": "",
+						"f_eponymo": "",
+						"f_onoma": "",
+						"f_sex": "1",
+						"f_age": "20",
+						"f_epipedo_morfosis": "13",
+						"f_eidikothta": "111043",
+						"f_unemployed": "1",
+						"f_nationality": "048"
+					}
+				]
+			}
+		}
+	}
+}

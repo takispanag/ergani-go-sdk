@@ -741,15 +741,22 @@ failure.
 | Weekly schedule | `SubmitWeeklySchedules` | `WTOWeek` |
 | Overtime schedule | `SubmitOvertimeSchedules` | `WTOOv` |
 | Leave | `SubmitLeaves` | `WTOLeave` |
-| E8 overtime | `SubmitOvertime` | `OvTime` |
-| Hire | `Submit` | `WebE3N` |
-| Resignation | `Submit` | `WebE5N` |
-| Dismissal | `Submit` | `WebE6NMP` |
-| End of a fixed term contract | `Submit` | `WebE7N` |
-| Change of the employment | `Submit` | `WebMA` |
+| Hire | `SubmitHire` | `WebE3N` |
+| Change of the employment | `SubmitEmploymentChange` | `WebMA` |
+| Construction worker | `SubmitConstructionWorkers` | `WebE12` |
+| Internship | `SubmitInternships` | `WebE35` |
+| Parental leave | `SubmitParentalLeaves` | `WebE14` |
+| Urgent hiring | `SubmitUrgentHirings` | `FastAna` |
+| Resignation | `SubmitTermination` | `WebE5N` |
+| Dismissal with notice | `SubmitTermination` | `WebE6NMP` |
+| End of a fixed term contract | `SubmitTermination` | `WebE7N` |
+| Change of the working time | `SubmitWorkStatusChange` | `WKChgWK` |
+| Exemption from the duty of advance notification | `SubmitExemptionNotification` | `ExProan` |
 
-The package holds the codes of the other types as constants, such as
-`ergani.CodeScheduleDailyA` and `ergani.CodeProbationTermination`.
+Every declaration type the SDK models is covered by a test that compares its
+payload with the reference payload the Ministry publishes, field for field.
+The declarations it does not model yet are submitted with [Client.Submit], and
+the schema of each of them is available from [Client.DocumentSchema].
 
 The E8 overtime form was replaced by the working time overtime declarations,
 and the API rejects its payload. `SubmitOvertime` is kept because the form is

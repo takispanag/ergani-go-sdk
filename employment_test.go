@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/takispanag/ergani-go-sdk/internal/wire"
 )
@@ -141,8 +142,8 @@ func readEmploymentSample(t *testing.T, name string) map[string]any {
 
 // compareFields reports the fields of two payloads that differ.
 func compareFields(got, want map[string]any) []string {
-	normalisedGot := normaliseNumbers(got)
-	normalisedWant := normaliseNumbers(want)
+	normalisedGot := normaliseNumbers(normaliseDates(got))
+	normalisedWant := normaliseNumbers(normaliseDates(want))
 
 	var differences []string
 
@@ -197,6 +198,24 @@ func isValidBase64(value any) bool {
 	_, err := base64.StdEncoding.DecodeString(text)
 
 	return err == nil
+}
+
+// normaliseDates rewrites the dates into a canonical form, because the
+// samples write a day and a month with and without their leading zero.
+func normaliseDates(fields map[string]any) map[string]any {
+	for name, value := range fields {
+		text, ok := value.(string)
+		if !ok {
+			continue
+		}
+		parsed, err := time.Parse("2/1/2006", text)
+		if err != nil {
+			continue
+		}
+		fields[name] = parsed.Format("02/01/2006")
+	}
+
+	return fields
 }
 
 // normaliseNumbers rewrites the numeric fields into a canonical form, because

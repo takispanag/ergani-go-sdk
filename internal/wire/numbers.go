@@ -16,7 +16,12 @@ import (
 type Amount float64
 
 // MarshalJSON implements the json.Marshaler interface.
+//
+// A value that is not given is left empty, the way the API leaves it.
 func (a Amount) MarshalJSON() ([]byte, error) {
+	if a == 0 {
+		return json.Marshal("")
+	}
 	return json.Marshal(formatAmount(float64(a)))
 }
 
@@ -44,7 +49,12 @@ func (a *Amount) UnmarshalJSON(data []byte) error {
 type Hours float64
 
 // MarshalJSON implements the json.Marshaler interface.
+//
+// A value that is not given is left empty, the way the API leaves it.
 func (h Hours) MarshalJSON() ([]byte, error) {
+	if h == 0 {
+		return json.Marshal("")
+	}
 	return json.Marshal(formatHours(float64(h)))
 }
 

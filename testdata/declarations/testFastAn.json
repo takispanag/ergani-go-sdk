@@ -1,0 +1,40 @@
+{
+	"FastAnaggelies": {
+		"FastAnaggelia": {
+			"f_aa_pararthmatos": "0",
+			"f_rel_protocol": "",
+			"f_rel_date": "",
+			"f_kad_pararthmatos": "4673",
+			"f_kallikratis_pararthmatos": "91790101",
+			"f_afm": "151619217",
+			"f_til": "1145",
+			"f_proslipsidate": "06/04/2026",
+			"f_proslipsitime": "09:00",
+			"f_apoxwrisitime": "11:00",
+			"f_second_working_date": "07/04/2026",
+			"f_second_working_datetime": "09:00",
+			"second_working_datetime_apoxwrisis": "12:00",
+			"f_eidikothta": "313200",
+			"f_eidikothta_anal": "",
+			"f_proipiresia": "1",
+			"f_apodoxes": "1.500,00",
+			"f_xronos_katavolis_apodoxon": "1",
+			"f_topos_ergasias": "0",
+			"f_topos_ergasias_comment": "",
+			"f_xaraktirismos": "1",
+			"f_efarmoste_sillogiki_simbasi": "0",
+			"f_efarmoste_sillogiki_simbasi_comments": "",
+			"f_kyria_asfalisi": "001",
+			"EpikourikiSelections": {
+				"EpikourikiSelectionsFastAna": {
+					"f_kod_epikourikis": "001"
+				}
+			},
+			"f_week_days": "5",
+			"f_dialeimma_minutes": "030",
+			"f_dialeimma_entos_wrariou": "1",
+			"f_euelikto_wrario_minutes": "015",
+			"f_comments": "No additional comments."
+		}
+	}
+}
